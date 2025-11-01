@@ -1,7 +1,7 @@
 from z64lib.core.types import *
 from z64lib.core.helpers import safe_enum
 
-from z64lib.audio.audiobank.enums import AudioStorageMedium, AudioCacheLoadType
+from z64lib.audio.enums import AudioStorageMedium, AudioCacheLoadType
 
 
 class AudiobankIndexEntry(Z64Struct):
@@ -19,19 +19,19 @@ class AudiobankIndexEntry(Z64Struct):
             /* 0x0B */ u8 sampleBankId2;
             /* 0x0C */ u8 numInstruments;
             /* 0x0D */ u8 numDrums;
-            /* 0x0E */ u16 numEffects;
+            /* 0x0E */ s16 numEffects;
         } AudiobankEntry; // Size = 0x10
     """
     _fields_ = [
         ('rom_addr', u32),
         ('bank_size', u32),
-        ('medium', u8),
-        ('cache_load_type', u8),
+        ('medium', s8),
+        ('cache_load_type', s8),
         ('sample_bank_id_1', u8),
         ('sample_bank_id_2', u8),
         ('num_instruments', u8),
         ('num_drums', u8),
-        ('num_effects', u16)
+        ('num_effects', s16)
     ]
     _enum_fields_ = {
         'medium': AudioStorageMedium,
@@ -39,8 +39,9 @@ class AudiobankIndexEntry(Z64Struct):
     }
     # _align_ = 0x10
 
+    # Override from_bytes() because it is common to find truncated data
     @classmethod
-    def from_bytes(cls, buffer: bytes, struct_offset: int = 0):
+    def from_bytes(cls, buffer: bytes, struct_offset: int = 0) -> 'AudiobankIndexEntry':
         """
         Parse an AudiobankIndexEntry from either a truncated (0x08) or full (0x10) Audiobank index entry.
 

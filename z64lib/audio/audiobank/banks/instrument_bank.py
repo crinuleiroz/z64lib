@@ -15,23 +15,23 @@ class InstrumentBank:
     """
     def __init__(self):
         self.index_entry: AudiobankIndexEntry = None
-        self.instruments: list[Instrument] = []
-        self.drums: list[Drum] = []
-        self.effects: list[TunedSample] = []
+        self.instruments: list[Instrument | None] = []
+        self.drums: list[Drum | None] = []
+        self.effects: list[TunedSample | None] = []
         self.drum_list_offset: int = 0
         self.effect_list_offset: int = 0
 
     @classmethod
-    def from_bytes(cls, index_entry: bytes | AudiobankIndexEntry, bank_data: bytes):
+    def from_bytes(cls, index_entry: bytes | AudiobankIndexEntry, bank_data: bytes | bytearray):
         """
         Instantiates an instrument bank object using binary data.
 
         Args:
-            table_entry (bytes): Binary table entry data. Can be either truncated (0x08) or full (0x10) bytes long.
-            bank_data (bytes): Binary instrument bank data.
+            table_entry: Binary table entry data or `AudiobankIndexEntry` object.
+            bank_data: Binary instrument bank data.
 
         Returns:
-            object (Audiobank): A fully parsed instrument bank.
+            object: A fully parsed instrument bank.
         """
         obj = cls()
 
@@ -56,6 +56,8 @@ class InstrumentBank:
             drum_offset = struct.unpack_from('>I', bank_data, offset)[0]
             if drum_offset != 0:
                 obj.drums.append(Drum.from_bytes(bank_data, drum_offset))
+            else:
+                obj.drums.append(None) # Preserve null
 
         # Effects
         for i in range(0, obj.index_entry.num_effects):
@@ -63,6 +65,8 @@ class InstrumentBank:
             effect = bank_data[offset:offset + 0x08]
             if effect != (b'\x00' * 8):
                 obj.effects.append(TunedSample.from_bytes(bank_data, offset))
+            else:
+                obj.effects.append(None) # Preserve null
 
         # Instruments
         for i in range(0, obj.index_entry.num_instruments):
@@ -70,6 +74,8 @@ class InstrumentBank:
             instrument_offset = struct.unpack_from('>I', bank_data, offset)[0]
             if instrument_offset != 0:
                 obj.instruments.append(Instrument.from_bytes(bank_data, instrument_offset))
+            else:
+                obj.instruments.append(None) # Preserve null
 
         return obj
 
