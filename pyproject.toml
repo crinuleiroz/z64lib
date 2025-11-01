@@ -1,0 +1,65 @@
+[build-system]
+requires=["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+# Project information
+[project]
+name = "z64lib"
+description= "A Python library for parsing and manipulating binary data from Zelda64 (Ocarina of Time and Majora's Mask) ROMs."
+version = "0.0.0.0a1"
+license = "GPL-3.0-or-later"
+license-files = [ "LICENSE" ]
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+
+authors = [
+    { name = "crinuleiroz" },
+]
+maintainers = [
+    { name = "crinuleiroz" },
+]
+
+classifiers = [
+    # Project Status
+    "Development Status :: 3 - Alpha",
+
+    # Intended Audience
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+
+    # Programming Languages
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+]
+
+dependencies = []
+
+keywords = [
+    "python",
+    "z64", "zelda64", "zelda 64",
+    "oot", "ocarina of time",
+    "mm", "majora's mask", "majoras mask",
+]
+
+[project.urls]
+repository = "https://github.com/crinuleiroz/z64lib"
+issues = "https://github.com/crinuleiroz/z64lib/issues"
+
+# Setuptools Configuration
+[tool.setuptools]
+packages = [
+    "z64lib",
+    "z64lib.audio",
+    "z64lib.core",
+]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+z64lib = "z64lib"
+
+[tool.setuptools.package-data]
+z64lib = ["LICENSE"]
