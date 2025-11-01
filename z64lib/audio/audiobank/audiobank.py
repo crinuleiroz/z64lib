@@ -9,16 +9,26 @@ class Audiobank:
         self.banks: list[InstrumentBank | None] = []
 
     @classmethod
-    def from_bytes(cls, audiobank_index: bytes | bytearray | AudiobankIndex, audiobank_data: bytes) -> 'Audiobank':
+    def from_bytes(cls, audiobank_index: bytes | bytearray | AudiobankIndex, audiobank_data: bytes | bytearray) -> 'Audiobank':
         """
         Instantiats an audiobank object using binary data.
 
-        Args:
-            audiobank_index: Binary `Audiobank`file index data from the ROM's `code` file.
-            audiobank_data: Binary `Audiobank` file data.
+        Parameters
+        ----------
+        audiobank_index: bytes | bytearray | AudiobankIndex
+            `Audiobank` file index data taken from the ROM's `code` file.
+        audiobank_data: bytes | bytearray
+            Binary `Audiobank` file data.
 
-        Returns:
-            object: A fully parsed `Audiobank` file.
+        Returns
+        ----------
+        Audiobank
+            Returns a fully instantiated `Audiobank` object.
+
+        Raises
+        ----------
+        TypeError
+            Invalid `audiobank_index` type.
         """
         obj = cls()
 

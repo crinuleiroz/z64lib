@@ -14,6 +14,17 @@ class VadpcmLoopHeader(Z64Struct):
             /* 0x08 */ u32 loopCount;
             /* 0x0C */ u32 numSamples;
         } VadpcmLoopHeader; // Size = 0x10
+
+    Attributes
+    ----------
+    loop_start: int
+        Offset, in samples, to the start of the loop.
+    loop_end: int
+        Offset, in samples, to the end of the loop.
+    loop_count: VadpcmLoopCount
+        Whether the sample loops indefinitely or just once.
+    num_samples: int
+        The total number of samples in the audio sample.
     """
     _fields_ = [
         ('loop_start', u32),
@@ -36,6 +47,13 @@ class VadpcmLoop(Z64Struct):
             /* 0x00 */ VadpcmLoopHeader header;
             /* 0x10 */ s16 predictorCoeff[16];
         } VadpcmLoop; // Size = 0x10 or 0x30
+
+    Attributes
+    ----------
+    header: VadpcmLoopHeader
+        Loop information for the audio sample.
+    predictors: list[int]
+        A list of signed prediction coefficient values.
     """
     _fields_ = [
         ('header', VadpcmLoopHeader),

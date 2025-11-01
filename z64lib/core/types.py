@@ -16,6 +16,7 @@ from z64lib.core.helpers import safe_enum, make_property
 
 
 class FieldType:
+    """ Base class all struct types inherit their properties from. """
     size: int = 0
     signed: bool
 
@@ -100,10 +101,28 @@ class pointer(FieldType):
         self.struct_type: Type['Z64Struct'] = struct_type
         self.size: int = 4
 
-    def from_bytes(self, buffer: bytes, offset: int):
+    def from_bytes(self, buffer: bytes, offset: int) -> object:
+        """
+        Instantiates a structure referenced by this pointer from binary data.
+
+        Parameters
+        ----------
+        buffer: bytes
+            Binary struct data.
+        offset: int
+            Offset to the struct.
+
+        Returns
+        ----------
+        object
+            Returns a fully instantiated object for the given struct type.
+            If the address is 0, returns None instead.
+        """
         addr = struct.unpack_from('>I', buffer, offset)[0]
+
         if addr == 0:
             return None
+
         return self.struct_type.from_bytes(buffer, addr)
 
 
@@ -124,10 +143,12 @@ class array(FieldType):
 
     def from_bytes(self, buffer: bytes, offset: int):
         self.items = []
+
         for i in range(self.length):
             item_offset = offset + i * self.field_type.size
             item = self.field_type.from_bytes(buffer, item_offset)
             self.items.append(item)
+
         return self
 
     def __iter__(self):
@@ -170,6 +191,8 @@ class bitfield(FieldType):
         if format is None:
             raise ValueError(f'Unsupported bitfield base size: {self.size}')
 
+        # Extracts bits from the structure, then performs the relevant operations
+        # to split the specified bit into a separate attribute for the object.
         bits = struct.unpack_from(format, buffer, offset)[0]
         bit_shift = self.size * 8 - bit_cursor - self.bit_width
         bit_mask = (1 << self.bit_width) - 1
@@ -200,10 +223,12 @@ class Z64Struct:
         if inspect.isclass(field_type) and issubclass(field_type, Z64Struct):
             value = field_type.from_bytes(buffer, field_offset)
             size = field_type.size()
+
         # Pointer
         elif isinstance(field_type, pointer):
             value = field_type.from_bytes(buffer, field_offset)
             size = field_type.size
+
         # Primitive
         else:
             value = field_type.from_bytes(buffer, field_offset)
@@ -222,24 +247,33 @@ class Z64Struct:
         """
         Instantiates a struct object from binary data.
 
-        Args:
-            buffer: Binary struct data.
-            struct_offset: Struct offset in binary data.
+        Parameters
+        ----------
+        buffer: bytes
+            Binary struct data.
+        struct_offset: int
+            Offset to the struct.
 
-        Returns:
-            object: A fully instantiated struct object.
+        Returns
+        ----------
+        object
+            Returns a fully instantiated object of the inheritor.
         """
         obj = cls.__new__(cls)
         field_offset = struct_offset
         bit_cursor = 0
         last_bitfield_type = None
 
+        # Goes through a structure's fields and performs the relevant operations to create
+        # nested objects, convert pointers and instantiate the referenced objects, create
+        # lists out of arrays, convert primitives, and split bitfields into attributes.
         for field in cls._fields_:
             match len(field):
+                # Primitives, pointers, and arrays
                 case 2:
                     name, field_type = field
 
-                    # Reset bitfield tracking
+                    # Reset bitfield tracking for nested objects
                     bit_cursor = 0
                     last_bitfield_type = None
 
@@ -248,7 +282,9 @@ class Z64Struct:
                     setattr(obj, name, value)
                     field_offset += size
 
+                # Bitfields
                 case 3:
+                    # Container type
                     name, container_type, subfields = field
                     if isinstance(subfields, list):
                         values = {}
@@ -261,10 +297,13 @@ class Z64Struct:
                             values[subname] = bitfield_value
                             bit_cursor += sub_bits
 
+                        # Sets the attributes for the container's values
                         setattr(obj, name, container_type(**values))
                         field_offset += base_type.size
                         bit_cursor = 0
                         last_bitfield_type = None
+
+                    # Primitive type
                     else:
                         name, base_type, bit_width = field
                         if last_bitfield_type != base_type:
@@ -281,6 +320,7 @@ class Z64Struct:
                             bit_cursor = 0
                             last_bitfield_type = None
 
+        # Stores the bool value instead of the raw byte value for the given fields
         for bool_field in getattr(cls, '_bool_fields_', []):
             raw_value = getattr(obj, bool_field)
             setattr(obj, f'_{bool_field}_raw', raw_value)
@@ -288,6 +328,7 @@ class Z64Struct:
             if not hasattr(cls, bool_field):
                 setattr(cls, bool_field, make_property(bool_field, bool))
 
+        # Stores the enum type instead of the raw byte value for the given fields
         for enum_field, enum_type in getattr(cls, '_enum_fields_', {}).items():
             raw_value = getattr(obj, enum_field)
             setattr(obj, f'_{enum_field}_raw', raw_value)
@@ -295,11 +336,13 @@ class Z64Struct:
             if not hasattr(cls, enum_field):
                 transform = (lambda t: (lambda val: safe_enum(t, val)))(enum_type)
                 setattr(cls, enum_field, make_property(enum_field, transform))
+
         return obj
 
     @classmethod
-    def size(cls):
-        size = 0
+    def size(cls) -> int:
+        """ Returns the total size of the structure in bytes. """
+        size: int = 0
         for f in cls._fields_:
             match len(f):
                 case 2:
@@ -320,10 +363,12 @@ class Z64Struct:
                         size += subfields[0][1].size
                     else:
                         continue
+
         return size
 
     def __repr__(self):
         lines = [f'{type(self).__name__}(']
+
         for field in self._fields_:
             name = field[0]
             value = getattr(self, name)
@@ -333,4 +378,5 @@ class Z64Struct:
             else:
                 lines.append(f'  {name}={value}')
         lines.append(')')
+
         return '\n'.join(lines)

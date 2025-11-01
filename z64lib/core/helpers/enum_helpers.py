@@ -4,11 +4,24 @@ Enum Helpers
 """
 def safe_enum(enum_cls, value: int):
     """
-    Safely converts `value` to `enum_cls`
+    Safely converts the given value to its respective enum member in the given enum class.
 
-    Args:
-        enum_cls (Class): The enum class.
-        value (int): The value to convert.
+    Parameters
+    ----------
+    enum_cls: Class
+        The enum class.
+    value: int
+        Integer value to convert to an enum member.
+
+    Returns
+    ----------
+    enum_cls(value)
+        Returns the respective enum class member.
+
+    Raises
+    ----------
+    ValueError
+        Invalid enum member for the given enum class.
     """
     try:
         return enum_cls(value)

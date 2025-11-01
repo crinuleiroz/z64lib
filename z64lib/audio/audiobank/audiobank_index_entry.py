@@ -21,6 +21,29 @@ class AudiobankIndexEntry(Z64Struct):
             /* 0x0D */ u8 numDrums;
             /* 0x0E */ s16 numEffects;
         } AudiobankEntry; // Size = 0x10
+
+    Attributes
+    ----------
+    rom_addr: int
+        Address of the entry in Audiotable.
+    table_size: int
+        Size of the Audiotable.
+    medium: AudioStorageMedium
+        The medium where the given data is stored.
+    cache_load_type: AudioCacheLoadType
+        The cache where the data loads into.
+    sample_bank_id_1: int
+        Index of the primary audiotable in the audiotable index where the
+        instrument bank's audio sample data is located.
+    sample_bank_id_2: int
+        Index of the secondart audiotable in the audiotable index where the
+        instrument bank's audio sample data is located.
+    num_instruments: int
+        The total number of instruments in the instrument bank.
+    num_drums: int
+        The total number of drums in the instrument bank.
+    num_effects: int
+        The total number of sound effects in the instrument bank.
     """
     _fields_ = [
         ('rom_addr', u32),
@@ -43,10 +66,28 @@ class AudiobankIndexEntry(Z64Struct):
     @classmethod
     def from_bytes(cls, buffer: bytes, struct_offset: int = 0) -> 'AudiobankIndexEntry':
         """
-        Parse an AudiobankIndexEntry from either a truncated (0x08) or full (0x10) Audiobank index entry.
+        Instantiates an `AudiobankIndexEntry` object from binary data.
 
-        Truncated entries are used by Ocarina of Time Randomizer, Majora's Mask Randomizer, and OoTMM Randomizer.
-        These truncated entries omit the offset to the instrument bank in Audiobank and the length of the instrument bank.
+        Entries may be truncated to 0x08 bytes, cutting out the address and size, because
+        Ocarina of Time Randomizer, Majora's Mask Randomizer, and OoTMM Randomizer utilize
+        truncated entries for their custom music files.
+
+        Parameters
+        ----------
+        buffer: bytes
+            Binary audiobank index entry data.
+        struct_offset: int
+            Offset of the structure.
+
+        Returns
+        ----------
+        AudiobankIndexEntry
+            Returns a fully instantiated `AudiobankIndexEntry` object.
+
+        Raises
+        ----------
+        ValueError
+            Invalid index entry size, must be 0x08 or 0x10 bytes.
         """
         length = len(buffer)
 

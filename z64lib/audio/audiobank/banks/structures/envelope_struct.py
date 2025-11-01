@@ -6,7 +6,8 @@ from z64lib.audio.enums import AdsrOpcode
 
 class EnvelopePoint(Z64Struct):
     """
-    Represents a single pair of time or opcode and amp or index values in an envelope array.
+    Represents a entry in the envelope array, which can be either a time and amplitude pair
+    or an opcode and index pair.
 
     .. code-block:: c
 
@@ -14,6 +15,19 @@ class EnvelopePoint(Z64Struct):
             /* 0x00 */ s16 timeOrOpcode;
             /* 0x02 */ s16 ampOrIndex;
         } EnvelopePoint; // Size = 0x04
+
+    Attributes
+    ----------
+    time_or_opcode: int | AdsrOpcode
+        If positive, represents time.
+        If zero or negative, represents an ADSR opcode (see `AdsrOpcode`).
+    amp_or_index: int
+        If `time_or_opcode` is time, this value represents the amplitude change
+        for the current point.
+        If `time_or_opcode` is an opcode, this value represents the index of
+        another point in the envelope array.
+    is_opcode: bool
+        True if `time_or_opcode` represents an opcode; False if it represents a time value.
     """
     _fields_ = [
         ('_time_or_opcode', s16),
@@ -43,9 +57,18 @@ class EnvelopePoint(Z64Struct):
 
 class Envelope(Z64Struct):
     """
-    Represents an array of EnvelopePoint structures in the instrument bank.
+    Represents an envelope, which is an array of `EnvelopePoint` structs.
+
+    The envelope defines amplitude changes over time for an instrument's note.
+    Points are read sequentially from memory until and opcode is encountered or
+    the note ends.
 
     In MIPS, words *cannot* begin at an odd memory alignment, they must be 2-byte aligned.
+
+    Attributes
+    ----------
+    points: list[EnvelopePoint]
+        A list of `EnvelopePoint` structs.
     """
     _fields_ = []
     _align_ = 0x10

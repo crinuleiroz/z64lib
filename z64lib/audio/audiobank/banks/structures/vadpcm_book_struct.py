@@ -11,6 +11,12 @@ class VadpcmBookHeader(Z64Struct):
             /* 0x00 */ s32 order;
             /* 0x04 */ s32 numPredictors;
         } VadpcmBookHeader; // Size = 0x08
+
+    Attributes
+    ----------
+    order: int
+        Number of previous samples to use when reconstructing the audio sample's next sample.
+    num_predictors: int
     """
     _fields_ = [
         ('order', s32),
@@ -28,6 +34,13 @@ class VadpcmBook(Z64Struct):
             /* 0x00 */ VadpcmBookHeader header;
             /* 0x08 */ s16 predictorCoeff[1];
         } VadpcmBook; // Size = 0x08 * header.order * header.numPredeictors
+
+    Attributes
+    ----------
+    header: VadpcmBookHeader
+        VADPCM information for the audio sample.
+    predictors: list[int]
+        A list of signed prediction coefficient values.
     """
     _fields_ = [
         ('header', VadpcmBookHeader),

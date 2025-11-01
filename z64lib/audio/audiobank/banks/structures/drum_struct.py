@@ -17,6 +17,21 @@ class Drum(Z64Struct):
             /* 0x04 */ TunedSample tunedSample;
             /* 0x0C */ struct Envelope* envelope;
         } Drum; // Size = 0x10
+
+    Attributes
+    ----------
+    decay_index: int
+        Index into the `AdsrDecayTable` used to determine the decay rate for
+        the instrument's notes.
+    pan: int
+        Left-right panning for the drum's notes, where 0 = full left,
+        64 = center, and 127 = full right.
+    is_relocated: bool
+        Flag indicating whether the instrument's data is relocated in memory.
+    tuned_sample: TunedSample
+        `TunedSample` object assigned to keys in the drum's notes.
+    envelope: int
+        An unsigned 32-bit integer pointing to an `Envelope` array in the instrument bank.
     """
     _fields_ = [
         ('decay_index', u8),

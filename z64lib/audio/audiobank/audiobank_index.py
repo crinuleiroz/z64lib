@@ -12,13 +12,17 @@ class AudiobankIndex:
     @classmethod
     def from_bytes(cls, audiobank_index: bytes | bytearray) -> 'AudiobankIndex':
         """
-        Instantiates an audiobank index object using binary data.
+        Instantiates an `AudiobankIndex` object from binary data.
 
-        Args:
-            audiobank_index: Binary `Audiobank` index data.
+        Paramters
+        ----------
+        audiobank_index: bytes | bytearray
+            `Audiobank` file index data taken from the ROM's `code` file.
 
-        Returns:
-            object: A fully instantiated `Audiobank` index.
+        Returns
+        ----------
+        AudiobankIndex
+            Returns a fully instantiated `AudiobankIndex` object.
         """
         obj = cls()
 

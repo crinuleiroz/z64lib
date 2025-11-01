@@ -63,6 +63,28 @@ class Sample(Z64Struct):
             /* 0x08 */ u32 VadpcmLoop* loop;
             /* 0x0C */ u32 VadpcmBook* book;
         } Sample; // Size = 0x10
+
+    Attributes
+    ----------
+    unk_0: int
+        Unknown flag.
+    codec: AudioSampleCodec
+        The audio codec used to encode and decode the audio sample.
+    medium: AudioStorageMedium
+        The medium where the audio sample data is stored.
+    is_cached: bool
+        Flag indicating whether the audio sample is cached in memory.
+    is_relocated: bool
+        Flag indicating whether the audio sample is relocated in memory.
+    size: int
+        The total size of the audio sample's data in bytes.
+    sample_addr: int
+        An unsigned 32-bit integer pointing to the audio sample's data in
+        the instrument bank's assigned `Audiotable`.
+    loop: int
+        An unsigned 32-bit integer pointing to a `VadpcmLoop` struct in the instrument bank.
+    book: int
+        An unsigned 32-bit integer pointing to a `VadpcmBook` struct in the instrument bank.
     """
     _fields_ = [
         ('flags', SampleFlags, [

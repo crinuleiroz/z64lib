@@ -10,28 +10,48 @@ class InstrumentBank:
     """
     Represents a Zelda64 instrument bank.
 
-    Attributes:
-        from_bytes (method): Parses binary data and creates an `Audiobank` object in memory.
+    Attributes
+    ----------
+    index_entry: AudiobankIndexEntry
+        The instrument bank's corresponding entry from the `code` file's audiobank index.
+    instruments: list[Instrument | None]
+        The instruments contained in the instrument bank.
+    drums: list[Drum | None]
+        The drums contained in the instrument bank.
+    effects: list[TunedSample | None]
+        The sound effects contained in the instrument bank.
     """
     def __init__(self):
         self.index_entry: AudiobankIndexEntry = None
         self.instruments: list[Instrument | None] = []
         self.drums: list[Drum | None] = []
         self.effects: list[TunedSample | None] = []
+
+        # Public, but
         self.drum_list_offset: int = 0
         self.effect_list_offset: int = 0
 
     @classmethod
-    def from_bytes(cls, index_entry: bytes | AudiobankIndexEntry, bank_data: bytes | bytearray) -> 'InstrumentBank':
+    def from_bytes(cls, index_entry: bytes | bytearray | AudiobankIndexEntry, bank_data: bytes | bytearray) -> 'InstrumentBank':
         """
-        Instantiates an instrument bank object using binary data.
+        Instantiates an `InstrumentBank` object from binary data.
 
-        Args:
-            table_entry: Binary table entry data or `AudiobankIndexEntry` object.
-            bank_data: Binary instrument bank data.
+        Parameters
+        ----------
+        index_entry: bytes | bytearray | AudiobankIndexEntry
+            `Audiobank` file index entry data taken from the ROM's `code` file.
+        bank_data: bytes | bytearray
+            Binary instrument bank data.
 
-        Returns:
-            object: A fully parsed instrument bank.
+        Returns
+        ----------
+        InstrumentBank
+            Returns a fully instantiated `InstrumentBank` object.
+
+        Raises
+        ----------
+        TypeError
+            Invalid `index_entry` type.
         """
         obj = cls()
 
