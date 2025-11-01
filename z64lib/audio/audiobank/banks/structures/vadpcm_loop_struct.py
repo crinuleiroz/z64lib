@@ -44,7 +44,7 @@ class VadpcmLoop(Z64Struct):
 
     # Override because the array is conditional based on header values
     @classmethod
-    def from_bytes(cls, buffer: bytes, struct_offset:int = 0):
+    def from_bytes(cls, buffer: bytes, struct_offset:int = 0) -> 'VadpcmLoop':
         obj = cls.__new__(cls)
 
         obj.header = VadpcmLoopHeader.from_bytes(buffer, struct_offset)

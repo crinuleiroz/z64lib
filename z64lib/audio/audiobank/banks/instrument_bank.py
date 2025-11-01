@@ -22,7 +22,7 @@ class InstrumentBank:
         self.effect_list_offset: int = 0
 
     @classmethod
-    def from_bytes(cls, index_entry: bytes | AudiobankIndexEntry, bank_data: bytes | bytearray):
+    def from_bytes(cls, index_entry: bytes | AudiobankIndexEntry, bank_data: bytes | bytearray) -> 'InstrumentBank':
         """
         Instantiates an instrument bank object using binary data.
 

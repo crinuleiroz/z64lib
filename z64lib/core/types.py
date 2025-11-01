@@ -219,6 +219,16 @@ class Z64Struct:
 
     @classmethod
     def from_bytes(cls, buffer: bytes, struct_offset: int = 0):
+        """
+        Instantiates a struct object from binary data.
+
+        Args:
+            buffer: Binary struct data.
+            struct_offset: Struct offset in binary data.
+
+        Returns:
+            object: A fully instantiated struct object.
+        """
         obj = cls.__new__(cls)
         field_offset = struct_offset
         bit_cursor = 0

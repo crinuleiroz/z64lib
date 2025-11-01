@@ -36,7 +36,7 @@ class VadpcmBook(Z64Struct):
     _align_ = 0x10
 
     @classmethod
-    def from_bytes(cls, buffer: bytes, struct_offset: int = 0):
+    def from_bytes(cls, buffer: bytes, struct_offset: int = 0) -> 'VadpcmBook':
         obj = cls.__new__(cls)
 
         obj.header = VadpcmBookHeader.from_bytes(buffer, struct_offset)
