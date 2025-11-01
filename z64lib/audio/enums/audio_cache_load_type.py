@@ -13,7 +13,7 @@ class AudioCacheLoadType(NamedIntEnum):
             /* 2 */ CACHE_LOAD_TEMPORARY,
             /* 3 */ CACHE_LOAD_EITHER,
             /* 4 */ CACHE_LOAD_EITHER_NOSYNC,
-        } AudioSampleCodec;
+        } AudioCacheLoadType;
     """
     LOAD_PERMANENT = 0
     """ Audio data is loaded into the permanent audio cache. """
