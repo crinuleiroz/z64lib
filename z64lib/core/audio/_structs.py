@@ -94,6 +94,45 @@ class AudioSpec(Z64Struct):
             /* 0x30 */ u32 persistentSampleCacheSize;
             /* 0x34 */ u32 temporarySampleCacheSize;
         } AudioSpec; // size = 0x38
+
+    Attributes
+    ----------
+    sample_rate: int
+        Sample rate in Hz.
+    unk_04: int
+        Unknown struct member.
+    num_voices: int
+        Total number of voices that can sound simultaneously.
+    num_seq_players: int
+        Total number of sequence players used by the spec.
+    unk_07: int
+        Unknown struct member.
+    unk_08: int
+        Unknown struct member.
+    num_reverb_settings: int
+        Total number of reverb settings used by the spec.
+    dma_sample_buffer_size_1: int
+        Size of one of the temporary buffers used during audio sample decoding.
+    dma_sample_buffer_size_2: int
+        Size of one of the temporary buffers used during audio sample decoding.
+    unk_14: int
+        Unknown struct member.
+    persistent_seq_cache_size: int
+        Total size of the persistent audio sequence cache.
+    persistent_bank_cache_size: int
+        Total size of the persistent instrument bank cache.
+    persistent_sample_bank_cache_size: int
+        Total size of the persistent sample bank cache.
+    temporary_seq_cache_size: int
+        Total size of the temporary audio sequence cache.
+    temporary_bank_cache_size: int
+        Total size of the temporary instrument bank cache.
+    temporary_sample_bank_cache_size: int
+        Total size of the temporary sample bank cache.
+    persistent_sample_cache_size: int
+        Total size of the persistent audio sample cache.
+    temporary_sample_cache_size: int
+        Total size of the temporary audio sample cache.
     """
     _fields_ = [
         ('sample_rate', u32),
