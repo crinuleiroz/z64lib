@@ -24,7 +24,7 @@ class VadpcmBookHeader(Z64Struct):
     ]
 
 
-class VadpcmBook(Z64Struct):
+class VadpcmBook(DynaStruct):
     """
     Represents audio sample decoding information in the instrument bank.
 
@@ -47,7 +47,6 @@ class VadpcmBook(Z64Struct):
         ('predictors', array(s16, 0))
     ]
     _align_ = 0x10
-    _dynamic_size_ = True
 
     @classmethod
     def from_bytes(cls, buffer: bytes, struct_offset: int = 0) -> 'VadpcmBook':

@@ -37,7 +37,7 @@ class VadpcmLoopHeader(Z64Struct):
     }
 
 
-class VadpcmLoop(Z64Struct):
+class VadpcmLoop(DynaStruct):
     """
     Represents audio sample loop information in the instrument bank.
 
@@ -59,7 +59,6 @@ class VadpcmLoop(Z64Struct):
         ('header', VadpcmLoopHeader),
         ('predictors', array(s16, 0))
     ]
-    _dynamic_size_ = True
 
     # Override because the array is conditional based on header values
     @classmethod

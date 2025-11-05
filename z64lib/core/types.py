@@ -12,7 +12,7 @@ import inspect
 from typing import Type, Any
 from dataclasses import dataclass
 
-from z64lib.core.alignment import walk_fields, align_field, align_to
+from z64lib.core.alignment import walk_fields, align_to
 from z64lib.core.helpers import safe_enum, make_property
 
 
@@ -217,7 +217,6 @@ class Z64Struct:
     _bool_fields_: list[str] = []
     _enum_fields_: dict[str, type] = {} # field name -> enum
     _align_: int = 1
-    _dynamic_size_: bool = False
 
     @staticmethod
     def _read_field(buffer: bytes, field_offset: int, field_type: Any) -> tuple[Any, int]:
@@ -290,8 +289,16 @@ class Z64Struct:
     def size_class(cls) -> int:
         """ Returns the total size of the structure in bytes. """
         def callback(name, field_type, offset, extra):
+            # Nested structs
             if inspect.isclass(field_type) and issubclass(field_type, Z64Struct):
                 return offset + field_type.size_class()
+
+            # Grouped bitfields
+            elif extra:
+                base_type = extra[0][1]
+                return offset + base_type.size
+
+            # Primitives, pointers, and arrays
             return offset + getattr(field_type, 'size', 0)
 
         offset = walk_fields(cls._fields_, callback)
@@ -299,31 +306,8 @@ class Z64Struct:
             offset = align_to(offset, cls._align_)
         return offset
 
-    def size(self):
-        """ Returns the total size of the structure in bytes. """
-        if getattr(self, '_dynamic_size_', False):
-            offset = 0
-            for field in self._fields_:
-                name = field[0]
-                field_type = field[1]
-
-                offset = align_field(offset, field_type)
-                value = getattr(self, name, None)
-
-                if isinstance(value, Z64Struct):
-                    offset += value.size()
-                elif isinstance(value, array):
-                    offset += len(value) * value.field_type.size
-                else:
-                    offset += getattr(field_type, 'size', 0)
-
-            if getattr(self, '_align_', 1) > 1:
-                offset = align_to(offset, self._align_)
-
-            return offset
-
-        else:
-            return self.__class__.size_class()
+    def size(self) -> int:
+        return self.__class__.size_class()
 
     def __repr__(self):
         lines = [f'{type(self).__name__}(']
@@ -339,3 +323,35 @@ class Z64Struct:
         lines.append(')')
 
         return '\n'.join(lines)
+
+
+class DynaStruct(Z64Struct):
+    """
+    Base class for dynamically sized Zelda64 structs.
+    Automatically computes size based on content.
+    """
+    def size(self) -> int:
+        obj = self
+
+        def callback(name, field_type, offset, extra):
+            value = getattr(obj, name, None)
+
+            # Nested structs
+            if isinstance(value, Z64Struct):
+                return offset + value.size()
+
+            # Grouped bitfields
+            if extra:
+                base_type = extra[0][1]
+                return offset + base_type.size
+
+            # Primitives, pointers, and arrays
+            if isinstance(field_type, array):
+                if value is not None:
+                    return offset + len(value) * field_type.field_type.size
+                return offset + getattr(field_type, 'size', 0)
+
+            return offset + getattr(field_type, 'size', 0)
+
+        offset = walk_fields(self._fields_, callback)
+        return align_to(offset, getattr(self, '_align_', 1))
