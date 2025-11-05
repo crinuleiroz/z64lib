@@ -1,5 +1,5 @@
 """
-z64lib.audio.audiobank.banks.structures
+z64lib.audio.audiobank.banks.structs
 =====
 """
 

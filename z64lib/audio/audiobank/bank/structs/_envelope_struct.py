@@ -93,6 +93,16 @@ class Envelope(Z64Struct):
 
         return obj
 
+    def to_bytes(self) -> bytes:
+        data = bytearray()
+
+        for point in self.points:
+            data += point.to_bytes()
+
+        aligned_size = (len(data) + self._align_ - 1) & ~(self._align_ - 1)
+        data += bytes(aligned_size - len(data))
+        return bytes(data)
+
     def __repr__(self):
         if not self.points:
             return f'{type(self).__name__}([])'

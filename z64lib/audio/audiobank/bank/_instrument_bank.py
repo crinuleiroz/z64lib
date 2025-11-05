@@ -1,9 +1,9 @@
 import struct
 
 from z64lib.audio.audiobank import AudiobankIndexEntry
-from z64lib.audio.audiobank.banks.structures import Instrument
-from z64lib.audio.audiobank.banks.structures import Drum
-from z64lib.audio.audiobank.banks.structures import TunedSample
+from z64lib.audio.audiobank.bank.structs import Instrument
+from z64lib.audio.audiobank.bank.structs import Drum
+from z64lib.audio.audiobank.bank.structs import TunedSample
 
 
 class InstrumentBank:

@@ -50,16 +50,25 @@ def walk_fields(fields, callback, start_offset: int = 0) -> int:
     int
         Final offset after processing all fields.
     """
+    from z64lib.core.types import union
+
     offset = start_offset
     bit_cursor = 0
     last_bitfield_type = None
 
     for field in fields:
         match len(field):
-            # Primitive, pointer, or array
+            # Primitive, pointer, array, or union
             case 2:
                 name, field_type = field
                 offset = align_field(offset, field_type)
+
+                if isinstance(field_type, union):
+                    offset = callback(name, field_type, offset, None)
+                    bit_cursor = 0
+                    last_bitfield_type = None
+                    continue
+
                 offset = callback(name, field_type, offset, None)
                 bit_cursor = 0
                 last_bitfield_type = None
@@ -67,6 +76,7 @@ def walk_fields(fields, callback, start_offset: int = 0) -> int:
             # Bitfields
             case 3:
                 name, container_or_type, subfields = field
+
                 # Grouped bitfields
                 if isinstance(subfields, list):
                     base_type = subfields[0][1]

@@ -1,7 +1,7 @@
 from z64lib.core.types import *
 
-from z64lib.audio.audiobank.banks.structures import TunedSample
-from z64lib.audio.audiobank.banks.structures import Envelope
+from z64lib.audio.audiobank.bank.structs import TunedSample
+from z64lib.audio.audiobank.bank.structs import Envelope
 
 
 class Instrument(Z64Struct):

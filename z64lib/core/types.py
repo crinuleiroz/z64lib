@@ -2,20 +2,19 @@
 z64lib.core.types
 =====
 
-A ctypes-like system for defining and parsing Zelda64 binary structures.
-
-Provides primitive field types (u8, s8, u16, s16, u32, s32, f32, pointer, array, bitfield)
-and a base class `Z64Struct` that supports aligned, nested structure parsing from big-endian data.
+A ctypes-like system for defining and parsing Zelda64 binary structs.
 """
 import struct
 import inspect
 from typing import Type, Any
 from dataclasses import dataclass
 
+from z64lib.core._accessors import UnionAccessor
 from z64lib.core.alignment import walk_fields, align_to
 from z64lib.core.helpers import safe_enum, make_property
 
 
+#region Struct Field Type Classes
 class FieldType:
     """ Base class all struct types inherit their properties from. """
     size: int = 0
@@ -23,6 +22,9 @@ class FieldType:
 
     @classmethod
     def from_bytes(cls, buffer: bytes, offset: int) -> Any:
+        raise NotImplementedError
+
+    def to_bytes(self, value) -> bytes:
         raise NotImplementedError
 
 
@@ -35,6 +37,10 @@ class u8(FieldType):
     def from_bytes(cls, buffer: bytes, offset: int):
         return struct.unpack_from('>B', buffer, offset)[0]
 
+    @classmethod
+    def to_bytes(cls, value):
+        return struct.pack('>B', value)
+
 
 class s8(FieldType):
     """ A signed 8-bit integer. """
@@ -44,6 +50,10 @@ class s8(FieldType):
     @classmethod
     def from_bytes(cls, buffer: bytes, offset: int):
         return struct.unpack_from('>b', buffer, offset)[0]
+
+    @classmethod
+    def to_bytes(cls, value):
+        return struct.pack('>b', value)
 
 
 class u16(FieldType):
@@ -55,6 +65,10 @@ class u16(FieldType):
     def from_bytes(cls, buffer: bytes, offset: int):
         return struct.unpack_from('>H', buffer, offset)[0]
 
+    @classmethod
+    def to_bytes(cls, value):
+        return struct.pack('>H', value)
+
 
 class s16(FieldType):
     """ A signed 16-bit integer. """
@@ -64,6 +78,10 @@ class s16(FieldType):
     @classmethod
     def from_bytes(cls, buffer: bytes, offset: int):
         return struct.unpack_from('>h', buffer, offset)[0]
+
+    @classmethod
+    def to_bytes(cls, value):
+        return struct.pack('>h', value)
 
 
 class u32(FieldType):
@@ -75,6 +93,10 @@ class u32(FieldType):
     def from_bytes(cls, buffer: bytes, offset: int):
         return struct.unpack_from('>I', buffer, offset)[0]
 
+    @classmethod
+    def to_bytes(cls, value):
+        return struct.pack('>I', value)
+
 
 class s32(FieldType):
     """ A signed 32-bit integer. """
@@ -85,6 +107,10 @@ class s32(FieldType):
     def from_bytes(cls, buffer: bytes, offset: int):
         return struct.unpack_from('>i', buffer, offset)[0]
 
+    @classmethod
+    def to_bytes(cls, value):
+        return struct.pack('>i', value)
+
 
 class f32(FieldType):
     """ A 32-bit single-precision floating-point value. """
@@ -94,6 +120,10 @@ class f32(FieldType):
     @classmethod
     def from_bytes(cls, buffer: bytes, offset: int):
         return struct.unpack_from('>f', buffer, offset)[0]
+
+    @classmethod
+    def to_bytes(cls, value):
+        return struct.pack('>f', value)
 
 
 class pointer(FieldType):
@@ -117,14 +147,27 @@ class pointer(FieldType):
         ----------
         object
             Returns a fully instantiated object for the given struct type.
-            If the address is 0, returns None instead.
+            If the address is 0 or out of bounds, returns None instead.
         """
-        addr = struct.unpack_from('>I', buffer, offset)[0]
-
-        if addr == 0:
+        try:
+            addr = struct.unpack_from('>I', buffer, offset)[0]
+        except struct.error:
             return None
 
-        return self.struct_type.from_bytes(buffer, addr)
+        if addr == 0 or addr >= len(buffer):
+            return None
+
+        try:
+            obj = self.struct_type.from_bytes(buffer, addr)
+            obj._address = addr
+            return obj
+        except Exception as e:
+            print(f"warning: failed to parse {self.struct_type.__name__} at 0x{addr:X}: {e}")
+            return None
+
+    def to_bytes(self, value):
+        addr = getattr(value, '_address', 0) if value else 0
+        return struct.pack('>I', addr)
 
 
 class array(FieldType):
@@ -152,6 +195,14 @@ class array(FieldType):
 
         return self
 
+    def to_bytes(self, values):
+        data = bytearray()
+
+        for v in values:
+            data += self.field_type.to_bytes(v)
+
+        return bytes(data)
+
     def __iter__(self):
         return iter(self.items)
 
@@ -168,11 +219,17 @@ class array(FieldType):
         return str(self.items)
 
 
-@dataclass
 class bitfield(FieldType):
     """ A number of bits that represent a single field in a struct. """
-    field_type: Type[FieldType]
-    bit_width: int
+    _FMT_MAP = {
+        1: ('>B', '>b'),
+        2: ('>H', '>h'),
+        4: ('>I', '>i'),
+    }
+
+    def __init__(self, field_type, bit_width):
+        self.field_type = field_type
+        self.bit_width = bit_width
 
     @property
     def size(self):
@@ -182,15 +239,11 @@ class bitfield(FieldType):
     def signed(self):
         return self.field_type.signed
 
-    def from_bytes(self, buffer: bytes, offset: int, bit_cursor: int):
-        format = {
-            1: '>B' if not self.signed else '>b',
-            2: '>H' if not self.signed else '>h',
-            4: '>I' if not self.signed else '>i',
-        }.get(self.size)
+    def _fmt(self):
+        return self._FMT_MAP[self.size][1 if self.signed else 0]
 
-        if format is None:
-            raise ValueError(f'Unsupported bitfield base size: {self.size}')
+    def from_bytes(self, buffer: bytes, offset: int, bit_cursor: int):
+        format = self._fmt()
 
         # Extracts bits from the structure, then performs the relevant operations
         # to split the specified bit into a separate attribute for the object.
@@ -205,7 +258,67 @@ class bitfield(FieldType):
 
         return bit_value
 
+    def to_bytes(self, bit_value: int, bit_cursor: int, base_value: int = 0) -> tuple[bytes, int]:
+        format = self._fmt()
 
+        bit_shift = self.size * 8 - bit_cursor - self.bit_width
+        bit_mask = (1 << self.bit_width) - 1
+        bits = base_value | ((bit_value & bit_mask) << bit_shift)
+
+        return struct.pack(format, bits), bits
+
+
+class union(FieldType):
+    """ A struct member whose memory is shared by multiple values. """
+    def __init__(self, *fields):
+        self._fields = fields
+
+    @property
+    def size(self):
+        sizes = []
+
+        for name, field_type in self._fields:
+            if inspect.isclass(field_type) and issubclass(field_type, Z64Struct):
+                sizes.append(field_type.size_class())
+            else:
+                sizes.append(getattr(field_type, 'size', 0))
+
+        return max(sizes)
+
+    def from_bytes(self, buffer: bytes | bytearray, offset: int):
+        values = {}
+
+        for name, field_type in self._fields:
+            if inspect.isclass(field_type) and issubclass(field_type, Z64Struct):
+                values[name] = field_type.from_bytes(buffer, offset)
+            else:
+                values[name] = field_type.from_bytes(buffer, offset)
+
+        return UnionAccessor(values)
+
+    def to_bytes(self, accessor: UnionAccessor) -> bytes:
+        active_name = accessor.active_field
+        if active_name not in accessor._values:
+            raise ValueError()
+
+        value = accessor._values[active_name]
+        field_type = None
+        for name, f_type in self._fields:
+            if name == active_name:
+                field_type = f_type
+                break
+
+        if field_type is None:
+            raise ValueError()
+
+        if inspect.isclass(field_type) and issubclass(field_type, Z64Struct):
+            return value.to_bytes()
+        else:
+            return field_type.to_bytes(value)
+#endregion
+
+
+#region Base Struct Classes
 class Z64Struct:
     """
     Base class for Zelda64 binary structures.
@@ -285,6 +398,55 @@ class Z64Struct:
         walk_fields(cls._fields_, callback, struct_offset)
         return obj
 
+    def to_bytes(self) -> bytes:
+        """
+        Compiles a struct object from memory into binary data.
+        """
+        buffer = bytearray(self.size())
+
+        def callback(name, field_type, offset, extra):
+            value = getattr(self, name)
+
+            # Bitfield group
+            if extra:
+                base_type = extra[0][1]
+                bits = 0
+                bit_cursor = 0
+                for sub_name, sub_type, sub_bits in extra:
+                    sub_val = getattr(value, sub_name)
+                    bf = bitfield(sub_type, sub_bits)
+                    bf_bytes, bits = bf.to_bytes(sub_val, bit_cursor, bits)
+                    bit_cursor += sub_bits
+                buffer[offset:offset + base_type.size] = base_type.to_bytes(bits)
+                return offset + base_type.size
+
+            # Boolean field
+            if name in getattr(self, "_bool_fields_", []):
+                value = 1 if value else 0
+
+            # Array
+            if isinstance(field_type, array):
+                size = len(value) * field_type.field_type.size
+                buffer[offset:offset + size] = field_type.to_bytes(value)
+                return offset + size
+
+            # Pointer
+            if isinstance(field_type, pointer):
+                buffer[offset:offset + field_type.size] = field_type.to_bytes(value)
+                return offset + field_type.size
+
+            # Nested struct
+            if isinstance(value, Z64Struct):
+                buffer[offset:offset + value.size()] = value.to_bytes()
+                return offset + value.size()
+
+            # Primitive
+            buffer[offset:offset + field_type.size] = field_type.to_bytes(value)
+            return offset + field_type.size
+
+        walk_fields(self._fields_, callback)
+        return bytes(buffer)
+
     @classmethod
     def size_class(cls) -> int:
         """ Returns the total size of the structure in bytes. """
@@ -355,3 +517,4 @@ class DynaStruct(Z64Struct):
 
         offset = walk_fields(self._fields_, callback)
         return align_to(offset, getattr(self, '_align_', 1))
+#endregion
