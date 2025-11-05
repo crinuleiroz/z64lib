@@ -14,7 +14,7 @@ class Drum(Z64Struct):
             /* 0x00 */ u8 decayIndex;
             /* 0x04 */ u8 pan;
             /* 0x08 */ u8 isRelocated;
-            /* 0x04 */ TunedSample tunedSample;
+            /* 0x0A */ TunedSample tunedSample;
             /* 0x0C */ struct Envelope* envelope;
         } Drum; // Size = 0x10
 
@@ -37,7 +37,7 @@ class Drum(Z64Struct):
         ('decay_index', u8),
         ('pan', u8),
         ('is_relocated', u8),
-        ('_pad', u8),
+        # ('_pad', u8),
         ('tuned_sample', TunedSample),
         ('envelope', pointer(Envelope))
     ]

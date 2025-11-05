@@ -59,6 +59,7 @@ class VadpcmLoop(Z64Struct):
         ('header', VadpcmLoopHeader),
         ('predictors', array(s16, 0))
     ]
+    _dynamic_size_ = True
 
     # Override because the array is conditional based on header values
     @classmethod
@@ -66,7 +67,7 @@ class VadpcmLoop(Z64Struct):
         obj = cls.__new__(cls)
 
         obj.header = VadpcmLoopHeader.from_bytes(buffer, struct_offset)
-        header_size = VadpcmLoopHeader.size()
+        header_size = obj.header.size()
 
         if obj.header.loop_start == 0:
             obj.predictors = array(s16, 0)

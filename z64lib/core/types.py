@@ -12,6 +12,7 @@ import inspect
 from typing import Type, Any
 from dataclasses import dataclass
 
+from z64lib.core.alignment import walk_fields, align_field, align_to
 from z64lib.core.helpers import safe_enum, make_property
 
 
@@ -216,6 +217,7 @@ class Z64Struct:
     _bool_fields_: list[str] = []
     _enum_fields_: dict[str, type] = {} # field name -> enum
     _align_: int = 1
+    _dynamic_size_: bool = False
 
     @staticmethod
     def _read_field(buffer: bytes, field_offset: int, field_type: Any) -> tuple[Any, int]:
@@ -236,12 +238,6 @@ class Z64Struct:
 
         return value, size
 
-    @staticmethod
-    def _align_to(offset: int, align: int) -> int:
-        if align == 0:
-            return offset
-        return (offset + align -1) & ~(align -1) # (offset + align - 1) // align * align
-
     @classmethod
     def from_bytes(cls, buffer: bytes, struct_offset: int = 0):
         """
@@ -260,111 +256,74 @@ class Z64Struct:
             Returns a fully instantiated object of the inheritor.
         """
         obj = cls.__new__(cls)
-        field_offset = struct_offset
-        bit_cursor = 0
-        last_bitfield_type = None
 
-        # Goes through a structure's fields and performs the relevant operations to create
-        # nested objects, convert pointers and instantiate the referenced objects, create
-        # lists out of arrays, convert primitives, and split bitfields into attributes.
-        for field in cls._fields_:
-            match len(field):
-                # Primitives, pointers, and arrays
-                case 2:
-                    name, field_type = field
+        def callback(name, field_type, offset, extra):
+            if extra: # Grouped bitfields
+                values = {}
+                base_type = extra[0][1]
+                bit_cursor = 0
+                for subname, sub_type, sub_bits in extra:
+                    bf_type = bitfield(sub_type, sub_bits)
+                    bf_value = bf_type.from_bytes(buffer, offset, bit_cursor)
+                    values[subname] = bf_value
+                    bit_cursor += sub_bits
+                setattr(obj, name, field_type(**values))
+                return offset + base_type.size
 
-                    # Reset bitfield tracking for nested objects
-                    bit_cursor = 0
-                    last_bitfield_type = None
+            elif isinstance(field_type, bitfield):
+                raise NotImplementedError()
+            else:
+                value = field_type.from_bytes(buffer, offset)
+                setattr(obj, name, value)
 
-                    field_offset = cls._align_to(field_offset, cls._align_)
-                    value, size = cls._read_field(buffer, field_offset, field_type)
-                    setattr(obj, name, value)
-                    field_offset += size
+                if callable(getattr(field_type, 'size', None)):
+                    size = field_type.size_class()
+                else:
+                    size = getattr(field_type, 'size', 0)
 
-                # Bitfields
-                case 3:
-                    # Container type
-                    name, container_type, subfields = field
-                    if isinstance(subfields, list):
-                        values = {}
-                        base_type = subfields[0][1]
-                        bit_cursor = 0
-                        for subname, sub_type, sub_bits in subfields:
-                            assert sub_type == base_type, "Grouped bitfields must use the same base type."
-                            bitfield_type = bitfield(sub_type, sub_bits)
-                            bitfield_value = bitfield_type.from_bytes(buffer, field_offset, bit_cursor)
-                            values[subname] = bitfield_value
-                            bit_cursor += sub_bits
+                return offset + size
 
-                        # Sets the attributes for the container's values
-                        setattr(obj, name, container_type(**values))
-                        field_offset += base_type.size
-                        bit_cursor = 0
-                        last_bitfield_type = None
-
-                    # Primitive type
-                    else:
-                        name, base_type, bit_width = field
-                        if last_bitfield_type != base_type:
-                            bit_cursor = 0
-                            last_bitfield_type = base_type
-
-                        bitfield_type = bitfield(base_type, bit_width)
-                        bitfield_value = bitfield_type.from_bytes(buffer, field_offset, bit_cursor)
-                        setattr(obj, name, bitfield_value)
-
-                        bit_cursor += bit_width
-                        if bit_cursor >= base_type.size * 8:
-                            field_offset += base_type.size
-                            bit_cursor = 0
-                            last_bitfield_type = None
-
-        # Stores the bool value instead of the raw byte value for the given fields
-        for bool_field in getattr(cls, '_bool_fields_', []):
-            raw_value = getattr(obj, bool_field)
-            setattr(obj, f'_{bool_field}_raw', raw_value)
-
-            if not hasattr(cls, bool_field):
-                setattr(cls, bool_field, make_property(bool_field, bool))
-
-        # Stores the enum type instead of the raw byte value for the given fields
-        for enum_field, enum_type in getattr(cls, '_enum_fields_', {}).items():
-            raw_value = getattr(obj, enum_field)
-            setattr(obj, f'_{enum_field}_raw', raw_value)
-
-            if not hasattr(cls, enum_field):
-                transform = (lambda t: (lambda val: safe_enum(t, val)))(enum_type)
-                setattr(cls, enum_field, make_property(enum_field, transform))
-
+        walk_fields(cls._fields_, callback, struct_offset)
         return obj
 
     @classmethod
-    def size(cls) -> int:
+    def size_class(cls) -> int:
         """ Returns the total size of the structure in bytes. """
-        size: int = 0
-        for f in cls._fields_:
-            match len(f):
-                case 2:
-                    _, field_type = f
+        def callback(name, field_type, offset, extra):
+            if inspect.isclass(field_type) and issubclass(field_type, Z64Struct):
+                return offset + field_type.size_class()
+            return offset + getattr(field_type, 'size', 0)
 
-                    if inspect.isclass(field_type) and issubclass(field_type, Z64Struct):
-                        size += field_type.size()
-                    elif isinstance(field_type, pointer):
-                        size += 4
-                    elif isinstance(field_type, array):
-                        size += field_type.size
-                    else:
-                        size += field_type.size
+        offset = walk_fields(cls._fields_, callback)
+        if getattr(cls, '_align_', 1) > 1:
+            offset = align_to(offset, cls._align_)
+        return offset
 
-                case 3:
-                    if isinstance(f[2], list):
-                        _, _, subfields = f
-                        size += subfields[0][1].size
-                    else:
-                        continue
+    def size(self):
+        """ Returns the total size of the structure in bytes. """
+        if getattr(self, '_dynamic_size_', False):
+            offset = 0
+            for field in self._fields_:
+                name = field[0]
+                field_type = field[1]
 
-        return size
+                offset = align_field(offset, field_type)
+                value = getattr(self, name, None)
+
+                if isinstance(value, Z64Struct):
+                    offset += value.size()
+                elif isinstance(value, array):
+                    offset += len(value) * value.field_type.size
+                else:
+                    offset += getattr(field_type, 'size', 0)
+
+            if getattr(self, '_align_', 1) > 1:
+                offset = align_to(offset, self._align_)
+
+            return offset
+
+        else:
+            return self.__class__.size_class()
 
     def __repr__(self):
         lines = [f'{type(self).__name__}(']

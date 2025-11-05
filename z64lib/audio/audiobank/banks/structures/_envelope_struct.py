@@ -86,7 +86,7 @@ class Envelope(Z64Struct):
         while True:
             point = EnvelopePoint.from_bytes(buffer, offset)
             obj.points.append(point)
-            offset += EnvelopePoint.size()
+            offset += EnvelopePoint.size_class()
 
             if point.is_opcode:
                 break

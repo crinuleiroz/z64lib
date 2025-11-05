@@ -47,13 +47,14 @@ class VadpcmBook(Z64Struct):
         ('predictors', array(s16, 0))
     ]
     _align_ = 0x10
+    _dynamic_size_ = True
 
     @classmethod
     def from_bytes(cls, buffer: bytes, struct_offset: int = 0) -> 'VadpcmBook':
         obj = cls.__new__(cls)
 
         obj.header = VadpcmBookHeader.from_bytes(buffer, struct_offset)
-        header_size = VadpcmBookHeader.size()
+        header_size = obj.header.size()
 
         order = obj.header.order
         num_predictors = obj.header.num_predictors
