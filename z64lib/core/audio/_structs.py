@@ -1,3 +1,4 @@
+from z64lib.core.helpers import safe_enum
 from z64lib.core.types import *
 from z64lib.core.enums import AdsrOpcode
 

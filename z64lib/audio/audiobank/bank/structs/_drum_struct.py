@@ -37,7 +37,6 @@ class Drum(Z64Struct):
         ('decay_index', u8),
         ('pan', u8),
         ('is_relocated', u8),
-        # ('_pad', u8),
         ('tuned_sample', TunedSample),
         ('envelope', pointer(Envelope))
     ]
