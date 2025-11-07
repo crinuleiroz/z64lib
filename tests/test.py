@@ -3,7 +3,7 @@ from pathlib import Path
 
 # Ensure import works
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from z64lib.audio.audiobank.banks import InstrumentBank
+from z64lib.audio.audiobank.bank import InstrumentBank
 
 # Base directory of this script
 BASE_DIR = Path(__file__).resolve().parent
@@ -19,6 +19,9 @@ with open(TABLE_ENTRY, 'rb') as e:
 with open(BANK_DATA, 'rb') as b:
     bank_data = b.read()
 
+# Test print
 bank = InstrumentBank.from_bytes(entry_data, bank_data)
+print(bank.instruments[0])
 
-print(bank)
+bytes = bank.instruments[0].to_bytes()
+print(bytes.hex())

@@ -1,5 +1,78 @@
 from z64lib.core.types import *
+from z64lib.core.enums import AdsrOpcode
 
+
+class EnvelopePoint(Z64Struct):
+    """
+    Represents a entry in the envelope array, which can be either a time and amplitude pair
+    or an opcode and index pair.
+
+    .. code-block:: c
+
+        typedef struct EnvelopePoint {
+            /* 0x00 */ s16 timeOrOpcode;
+            /* 0x02 */ s16 ampOrIndex;
+        } EnvelopePoint; // Size = 0x04
+
+    Attributes
+    ----------
+    time_or_opcode: int | AdsrOpcode
+        If positive, represents time.
+        If zero or negative, represents an ADSR opcode (see `AdsrOpcode`).
+    amp_or_index: int
+        If `time_or_opcode` is time, this value represents the amplitude change
+        for the current point.
+        If `time_or_opcode` is an opcode, this value represents the index of
+        another point in the envelope array.
+    is_opcode: bool
+        True if `time_or_opcode` represents an opcode; False if it represents a time value.
+    """
+    _fields_ = [
+        ('_time_or_opcode', s16),
+        ('amp_or_index', s16)
+    ]
+
+    @property
+    def time_or_opcode(self):
+        val = self._time_or_opcode
+
+        if val <= 0:
+            return safe_enum(AdsrOpcode, val)
+        else:
+            return val
+
+    @property
+    def is_opcode(self):
+        return self._time_or_opcode <= 0
+
+
+class AdsrSettings(Z64Struct):
+    """
+    Represents the settings for the audio engines ADSR implementation.
+
+    .. code-block:: c
+
+        typedef struct AdsrSettings {
+            /* 0x00 */ u8 decayIndex;
+            /* 0x01 */ u8 sustain;
+            /* 0x04 */ EnvelopePoint* envelope;
+        } AdsrSettings; // size = 0x08
+
+    Attributes
+    ----------
+    decay_index: int
+        Index used to obtain the decay rate from the `adsrDecayTable`.
+    sustain: int
+        ...
+    envelope: EnvelopePoint
+        Pointer to an envelope array.
+    """
+    _fields_ = [
+        ('decay_index', u8),
+        ('sustain', u8),
+        ('envelope', pointer(EnvelopePoint))
+    ]
+    _align_ = 4
 
 class ReverbSettings(Z64Struct):
     """

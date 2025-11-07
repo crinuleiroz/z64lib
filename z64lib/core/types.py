@@ -10,8 +10,8 @@ from typing import Type, Any
 from dataclasses import dataclass
 
 from z64lib.core._accessors import UnionAccessor
-from z64lib.core.alignment import walk_fields, align_to
-from z64lib.core.helpers import safe_enum, make_property
+from z64lib.core._internals import walk_fields
+from z64lib.core.alignment import align_to
 
 
 #region Struct Field Type Classes
@@ -157,6 +157,8 @@ class pointer(FieldType):
         if addr == 0 or addr >= len(buffer):
             return None
 
+        # Begin instantiation of the object. After the object is instantiated,
+        # store the pointer's raw bytes value in the class for binary serialization.
         try:
             obj = self.struct_type.from_bytes(buffer, addr)
             obj._address = addr
@@ -261,6 +263,7 @@ class bitfield(FieldType):
     def to_bytes(self, bit_value: int, bit_cursor: int, base_value: int = 0) -> tuple[bytes, int]:
         format = self._fmt()
 
+        # Pack the bits back into a single value.
         bit_shift = self.size * 8 - bit_cursor - self.bit_width
         bit_mask = (1 << self.bit_width) - 1
         bits = base_value | ((bit_value & bit_mask) << bit_shift)

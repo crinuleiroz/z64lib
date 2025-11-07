@@ -4,6 +4,7 @@ z64lib.core.audio
 """
 
 from ._structs import (
+    EnvelopePoint,
     ReverbSettings,
     AudioSpec,
     TempoData,
@@ -11,6 +12,7 @@ from ._structs import (
 )
 
 __all__ = [
+    "EnvelopePoint",
     "ReverbSettings",
     "AudioSpec",
     "TempoData",
