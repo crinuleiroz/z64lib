@@ -248,7 +248,7 @@ class InstrumentBank:
         for envelope in self._envelope_registry.values():
             allocator.reserve_mem(envelope, envelope.size(), aligned=True)
 
-    def to_bytes(self) -> tuple[bytes, bytes]:
+    def to_bytes(self, truncate_index_entry: bool = False) -> tuple[bytes, bytes]:
         """
         Compiles an `InstrumentBank` object from memory to binary.
 
@@ -319,20 +319,22 @@ class InstrumentBank:
             elif isinstance(obj, BankPointer):
                 continue
 
-            print(addr, obj.__class__)
             data = obj.to_bytes()
             buffer[addr:addr + len(data)] = data
 
-        return (self.index_entry.to_bytes()[-8:], bytes(buffer))
+        if truncate_index_entry:
+            return (self.index_entry.to_bytes()[-8:], bytes(buffer))
+        else:
+            return (self.index_entry.to_bytes()[-8:], bytes(buffer))
 
-    def write_bytes(self, file_name: str, file_path: str, output_metadata: bool = True, output_bank: bool = True):
+    def write_bytes(self, file_name: str, file_path: str, output_metadata: bool = True, truncate_metadata: bool = False, output_bank: bool = True):
         """
         Compiles an `InstrumentBank` object from memory to binary, then writes the output to a file.
         """
         from pathlib import Path
 
         out_path = Path(file_path)
-        bankmeta_bytes, bank_bytes = self.to_bytes()
+        bankmeta_bytes, bank_bytes = self.to_bytes(truncate_index_entry=truncate_metadata)
 
         if output_metadata:
             (out_path / f'{file_name}.bankmeta').write_bytes(bankmeta_bytes)
