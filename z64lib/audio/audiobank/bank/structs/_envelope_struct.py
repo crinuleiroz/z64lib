@@ -2,7 +2,7 @@ from z64lib.core.types import *
 from z64lib.core.audio import EnvelopePoint
 
 
-class Envelope(Z64Struct):
+class Envelope(DynaStruct):
     """
     Represents an envelope, which is an array of `EnvelopePoint` structs.
 
@@ -24,16 +24,16 @@ class Envelope(Z64Struct):
         self.points: list[EnvelopePoint] = []
 
     @classmethod
-    def from_bytes(cls, buffer: bytes, struct_offset: int = 0):
+    def from_bytes(cls, buffer: bytes, struct_addr: int = 0):
         obj = cls()
-        offset = struct_offset
+        addr = struct_addr
 
         # Loop through the array and create EnvelopePoint objects for each point
         # in the array until it hits an opcode. The game handles the array similarly.
         while True:
-            point = EnvelopePoint.from_bytes(buffer, offset)
+            point = EnvelopePoint.from_bytes(buffer, addr)
             obj.points.append(point)
-            offset += EnvelopePoint.size_class()
+            addr += EnvelopePoint.size_class()
 
             if point.is_opcode:
                 break
@@ -49,6 +49,19 @@ class Envelope(Z64Struct):
         aligned_size = (len(data) + self._align_ - 1) & ~(self._align_ - 1)
         data += bytes(aligned_size - len(data))
         return bytes(data)
+
+    def size(self) -> int:
+        size = len(self.points) * EnvelopePoint.size_class()
+        return (size + (self._align_ - 1) & ~(self._align_ - 1))
+
+    def _stable_bytes(self) -> bytes:
+        data = bytearray()
+        for point in self.points:
+            data.extend(point.to_bytes())
+        return bytes(data)
+
+    def get_hash(self):
+        return int(hashlib.sha256(self._stable_bytes()).hexdigest(), 16)
 
     def __repr__(self):
         if not self.points:

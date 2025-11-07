@@ -64,7 +64,7 @@ class AudiobankIndexEntry(Z64Struct):
 
     # Override from_bytes() because it is common to find truncated data
     @classmethod
-    def from_bytes(cls, buffer: bytes, struct_offset: int = 0) -> 'AudiobankIndexEntry':
+    def from_bytes(cls, buffer: bytes, struct_addr: int = 0) -> 'AudiobankIndexEntry':
         """
         Instantiates an `AudiobankIndexEntry` object from binary data.
 
@@ -76,8 +76,8 @@ class AudiobankIndexEntry(Z64Struct):
         ----------
         buffer: bytes
             Binary audiobank index entry data.
-        struct_offset: int
-            Offset of the structure.
+        struct_addr: int
+            Address of the structure.
 
         Returns
         ----------
@@ -102,4 +102,4 @@ class AudiobankIndexEntry(Z64Struct):
                     "(expected 0x08 or 0x10 bytes)."
                 )
 
-        return super().from_bytes(buffer, struct_offset)
+        return super().from_bytes(buffer, struct_addr)

@@ -6,6 +6,7 @@ A ctypes-like system for defining and parsing Zelda64 binary structs.
 """
 import struct
 import inspect
+import hashlib
 from typing import Type, Any
 from dataclasses import dataclass
 
@@ -161,14 +162,20 @@ class pointer(FieldType):
         # store the pointer's raw bytes value in the class for binary serialization.
         try:
             obj = self.struct_type.from_bytes(buffer, addr)
-            obj._address = addr
+            obj._original_address = addr
             return obj
         except Exception as e:
             print(f"warning: failed to parse {self.struct_type.__name__} at 0x{addr:X}: {e}")
             return None
 
     def to_bytes(self, value):
-        addr = getattr(value, '_address', 0) if value else 0
+        if not value:
+            return struct.pack('>I', 0)
+
+        addr = getattr(value, '_address', None)
+        if addr is None:
+            addr = getattr(value, '_original_addresss', 0)
+
         return struct.pack('>I', addr)
 
 
@@ -402,9 +409,7 @@ class Z64Struct:
         return obj
 
     def to_bytes(self) -> bytes:
-        """
-        Compiles a struct object from memory into binary data.
-        """
+        """ Compiles a struct object from memory into binary data. """
         buffer = bytearray(self.size())
 
         def callback(name, field_type, offset, extra):
@@ -473,6 +478,49 @@ class Z64Struct:
 
     def size(self) -> int:
         return self.__class__.size_class()
+
+    def _stable_bytes(self) -> bytes:
+        buffer = bytearray()
+
+        def callback(name, field_type, offset, extra):
+            value = getattr(self, name)
+
+            if extra:
+                base_type = extra[0][1]
+                bits = 0
+                bit_cursor = 0
+                for sub_name, sub_type, sub_bits in extra:
+                    sub_val = getattr(value, sub_name)
+                    bf = bitfield(sub_type, sub_bits)
+                    bf_bytes, bits = bf.to_bytes(sub_val, bit_cursor, bits)
+                    bit_cursor += sub_bits
+                buffer.extend(base_type.to_bytes(bits))
+                return offset + base_type.size
+
+            if name in getattr(self, '_bool_fields_', []):
+                value = 1 if value else 0
+
+            if isinstance(field_type, array):
+                buffer.extend(field_type.to_bytes(value))
+                return offset + len(value) * field_type.field_type.size
+
+            if isinstance(field_type, pointer):
+                buffer.extend(struct.pack('>I', 0xFFFFFFFF))
+                return offset + 4
+
+            if isinstance(value, Z64Struct):
+                buffer.extend(value._stable_bytes())
+                return offset + value.size()
+
+            buffer.extend(field_type.to_bytes(value))
+            return offset + field_type.size
+
+        walk_fields(self._fields_, callback)
+        return bytes(buffer)
+
+    def get_hash(self):
+        """ Return a stable SHA-256 hash as an integer. """
+        return int(hashlib.sha256(self._stable_bytes()).hexdigest(), 16)
 
     def __repr__(self):
         lines = [f'{type(self).__name__}(']
