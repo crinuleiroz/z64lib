@@ -190,7 +190,7 @@ class InstrumentBank:
         if truncate_index_entry:
             return (self.index_entry.to_bytes()[-8:], bytes(buffer))
         else:
-            return (self.index_entry.to_bytes()[-8:], bytes(buffer))
+            return (self.index_entry.to_bytes(), bytes(buffer))
 
     def write_bytes(self, file_name: str, file_path: str, output_metadata: bool = True, truncate_metadata: bool = False, output_bank: bool = True):
         """

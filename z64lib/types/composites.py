@@ -54,7 +54,6 @@ class array(DataType):
             data += self.data_type.to_bytes(v)
 
         return bytes(data)
-
 #endregion
 
 
@@ -106,7 +105,6 @@ class bitfield(DataType):
         bits = base_value | ((bit_value & bit_mask) << bit_shift)
 
         return struct.pack(format, bits), bits
-
 #endregion
 
 
