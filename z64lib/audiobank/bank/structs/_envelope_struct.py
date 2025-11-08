@@ -25,7 +25,7 @@ class Envelope(DynaStruct):
         self.points: list[EnvelopePoint] = []
 
     def size(self) -> int:
-        size = len(self.points) * EnvelopePoint.size_class()
+        size = len(self.points) * EnvelopePoint.size()
         return (size + (self._align_ - 1) & ~(self._align_ - 1))
 
     @classmethod
@@ -38,7 +38,7 @@ class Envelope(DynaStruct):
         while True:
             point = EnvelopePoint.from_bytes(buffer, addr)
             obj.points.append(point)
-            addr += EnvelopePoint.size_class()
+            addr += EnvelopePoint.size()
 
             if point.is_opcode:
                 break

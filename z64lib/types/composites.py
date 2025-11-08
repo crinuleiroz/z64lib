@@ -120,10 +120,7 @@ class union(DataType):
         sizes = []
 
         for name, data_type in self._fields:
-            if inspect.isclass(data_type) and issubclass(data_type, Z64Struct):
-                sizes.append(data_type.size_class())
-            else:
-                sizes.append(data_type.size())
+            sizes.append(data_type.size())
 
         return max(sizes)
 
@@ -173,23 +170,16 @@ class Z64Struct(DataType):
     _enum_fields_: dict[str, type] = {} # field name -> enum
     _align_: int = 1
 
-    def size(self) -> int:
-        return self.size_class()
-
     @classmethod
-    def size_class(cls) -> int:
+    def size(cls) -> int:
         """ Returns the total size of the structure in bytes. """
         def callback(name, data_type, offset, extra):
-            # Nested structs
-            if inspect.isclass(data_type) and issubclass(data_type, Z64Struct):
-                return offset + data_type.size_class()
-
             # Grouped bitfields
             if extra:
                 base_type = extra[0][1]
                 return offset + base_type.size()
 
-            # Primitives, pointers, and arrays
+            # Everything else
             return offset + data_type.size()
 
         offset = walk_fields(cls._fields_, callback)
@@ -234,12 +224,7 @@ class Z64Struct(DataType):
             else:
                 value = data_type.from_bytes(buffer, offset)
                 setattr(obj, name, value)
-
-                if inspect.isclass(data_type) and issubclass(data_type, Z64Struct):
-                    size = data_type.size_class()
-                else:
-                    size = data_type.size()
-
+                size = data_type.size()
                 return offset + size
 
         walk_fields(cls._fields_, callback, struct_offset)
