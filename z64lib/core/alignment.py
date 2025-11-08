@@ -1,6 +1,3 @@
-import inspect
-
-
 def align_to(value: int, alignment: int) -> int:
     """
     Align the given value to the next multiple of `alignment`.
@@ -29,20 +26,3 @@ def align_to(value: int, alignment: int) -> int:
     if alignment == 0:
         return value
     return (value + (alignment - 1)) & ~(alignment - 1)
-
-
-def natural_alignment(field_type) -> int:
-    """ Returns the natural alignment for a field type. """
-
-    if hasattr(field_type, 'field_type'):
-        return natural_alignment(field_type.field_type)
-
-    if inspect.isclass(field_type) and hasattr(field_type, '_fields_'):
-        return max((natural_alignment(f[1]) for f in field_type._fields_), default=1)
-
-    return getattr(field_type, "size", 1)
-
-
-def align_field(offset: int, field_type) -> int:
-    """ Return the offset aligned for this field type. """
-    return align_to(offset, natural_alignment(field_type))

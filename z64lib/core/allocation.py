@@ -18,15 +18,17 @@ class MemoryAllocator:
         self.addr: int = start
         self.entries: list[tuple[int, object]] = []
 
-    def _align_mem(self, value: int, alignment: int):
-        return (value + (alignment - 1)) & ~(alignment - 1)
-
     def reserve_mem(self, obj: object, size: int, alignment: int = 0x10, aligned: bool = False):
         if not aligned:
-            self.addr = self._align_mem(self.addr, alignment)
+            self.addr = self.align_to(self.addr, alignment)
 
         obj._address = self.addr
         self.entries.append((self.addr, obj))
         self.addr += size
 
         return obj._address
+
+    #region Helpers
+    def align_to(self, value: int, alignment: int):
+        return (value + (alignment - 1)) & ~(alignment - 1)
+    #endregion

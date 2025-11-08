@@ -1,6 +1,5 @@
 import struct
-
-from z64lib.audio.audiobank import AudiobankIndexEntry
+from z64lib.audiobank import AudiobankIndexEntry
 
 
 class AudiobankIndex:

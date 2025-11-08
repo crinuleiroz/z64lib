@@ -1,4 +1,4 @@
-from z64lib.core.types import *
+from z64lib.types import *
 
 
 class VadpcmBookHeader(Z64Struct):

@@ -1,7 +1,7 @@
-from enum import IntEnum
+from z64lib.core.enums import NamedIntEnum
 
 
-class VadpcmLoopCount(IntEnum):
+class VadpcmLoopCount(NamedIntEnum):
     NO_LOOP = 0
     """ Represents an audio sample that plays once. """
 

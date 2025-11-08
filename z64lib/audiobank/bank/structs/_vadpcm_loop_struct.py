@@ -1,5 +1,5 @@
-from z64lib.core.types import *
-from z64lib.audio.enums import VadpcmLoopCount
+from z64lib.core.enums import VadpcmLoopCount
+from z64lib.types import *
 
 
 class VadpcmLoopHeader(Z64Struct):

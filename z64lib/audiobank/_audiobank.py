@@ -1,5 +1,5 @@
-from z64lib.audio.audiobank import AudiobankIndex
-from z64lib.audio.audiobank.bank import InstrumentBank
+from z64lib.audiobank import AudiobankIndex
+from z64lib.audiobank.bank import InstrumentBank
 
 
 class Audiobank:

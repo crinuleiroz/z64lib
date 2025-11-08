@@ -1,5 +1,6 @@
-from z64lib.core.types import *
+import hashlib
 from z64lib.core.audio import EnvelopePoint
+from z64lib.types import *
 
 
 class Envelope(DynaStruct):
@@ -22,6 +23,10 @@ class Envelope(DynaStruct):
 
     def __init__(self):
         self.points: list[EnvelopePoint] = []
+
+    def size(self) -> int:
+        size = len(self.points) * EnvelopePoint.size_class()
+        return (size + (self._align_ - 1) & ~(self._align_ - 1))
 
     @classmethod
     def from_bytes(cls, buffer: bytes, struct_addr: int = 0):
@@ -50,18 +55,14 @@ class Envelope(DynaStruct):
         data += bytes(aligned_size - len(data))
         return bytes(data)
 
-    def size(self) -> int:
-        size = len(self.points) * EnvelopePoint.size_class()
-        return (size + (self._align_ - 1) & ~(self._align_ - 1))
+    def get_hash(self):
+        return int(hashlib.sha256(self._stable_bytes()).hexdigest(), 16)
 
     def _stable_bytes(self) -> bytes:
         data = bytearray()
         for point in self.points:
             data.extend(point.to_bytes())
         return bytes(data)
-
-    def get_hash(self):
-        return int(hashlib.sha256(self._stable_bytes()).hexdigest(), 16)
 
     def __repr__(self):
         if not self.points:

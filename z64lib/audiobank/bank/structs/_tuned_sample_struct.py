@@ -1,6 +1,5 @@
-from z64lib.core.types import *
-
-from z64lib.audio.audiobank.bank.structs import Sample
+from z64lib.audiobank.bank.structs import Sample
+from z64lib.types import *
 
 
 class TunedSample(Z64Struct):

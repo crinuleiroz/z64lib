@@ -1,12 +1,10 @@
 import struct
 from dataclasses import dataclass
-
+from z64lib.audiobank import AudiobankIndexEntry
+from z64lib.audiobank.bank.structs import Drum
+from z64lib.audiobank.bank.structs import Instrument
+from z64lib.audiobank.bank.structs import TunedSample
 from z64lib.core.allocation import MemoryAllocator
-from z64lib.core.alignment import align_to
-from z64lib.audio.audiobank import AudiobankIndexEntry
-from z64lib.audio.audiobank.bank.structs import Instrument
-from z64lib.audio.audiobank.bank.structs import Drum
-from z64lib.audio.audiobank.bank.structs import TunedSample
 
 
 @dataclass
@@ -115,6 +113,100 @@ class InstrumentBank:
 
         return obj
 
+    def to_bytes(self, truncate_index_entry: bool = False) -> tuple[bytes, bytes]:
+        """
+        Compiles an `InstrumentBank` object from memory to binary.
+
+        Returns
+        ----------
+        tuple[bytes, bytes]
+            A tuple containing the bank's index entry and binary data.
+        """
+
+        # Reference deduplication
+        # ————————————————————————————————————————————————————————————————
+        # If duplicate data exists in the bank, then the data should be
+        # replaced with already known existing data
+        for instrument in self.instruments:
+            self._process_instrument(instrument)
+
+        for drum in self.drums:
+            self._process_drum(drum)
+
+        for effect in self.effects:
+            self._process_effect(effect)
+
+        self.instruments = [
+            self._instrument_registry[instrument.get_hash()] if instrument else None
+            for instrument in self.instruments
+        ]
+        self.drums = [
+            self._drum_registry[drum.get_hash()] if drum else None
+            for drum in self.drums
+        ]
+        self.effects = [
+            self._effect_registry[effect.get_hash()] if effect else None
+            for effect in self.effects
+        ]
+        self._reassign_registry_refs()
+
+        # Pointer allocation
+        allocator = MemoryAllocator()
+        self._assign_addresses(allocator)
+
+        # Create the buffer
+        buffer = bytearray(allocator.align_to(allocator.addr, 0x10))
+
+        # Write drum list and effect list pointers
+        struct.pack_into('>2I', buffer, 0x00,
+                         self._drum_list.addr,
+                         self._effect_list.addr)
+
+        # Write pointer lists
+        for i, instrument in enumerate(self.instruments):
+            struct.pack_into('>I', buffer, self._instrument_list.addr + (i * 4),
+                             instrument._address if instrument else 0) # _address is assigned in MemoryAllocator.reserve_mem()
+
+        for i, drum in enumerate(self.drums):
+            struct.pack_into('>I', buffer, self._drum_list.addr + (i * 4),
+                             drum._address if drum else 0) # _address is assigned in MemoryAllocator.reserve_mem()
+
+        for i, effect in enumerate(self.effects):
+            if effect is None:
+                continue
+            start = self._effect_list.addr + (i * 8)
+            buffer[start:start + 8] = effect.to_bytes()
+
+        # Write structs
+        for addr, obj in sorted(allocator.entries, key=lambda x: x[0]):
+            if obj is None:
+                continue
+            elif isinstance(obj, BankPointer):
+                continue
+
+            data = obj.to_bytes()
+            buffer[addr:addr + len(data)] = data
+
+        if truncate_index_entry:
+            return (self.index_entry.to_bytes()[-8:], bytes(buffer))
+        else:
+            return (self.index_entry.to_bytes()[-8:], bytes(buffer))
+
+    def write_bytes(self, file_name: str, file_path: str, output_metadata: bool = True, truncate_metadata: bool = False, output_bank: bool = True):
+        """
+        Compiles an `InstrumentBank` object from memory to binary, then writes the output to a file.
+        """
+        from pathlib import Path
+
+        out_path = Path(file_path)
+        bankmeta_bytes, bank_bytes = self.to_bytes(truncate_index_entry=truncate_metadata)
+
+        if output_metadata:
+            (out_path / f'{file_name}.bankmeta').write_bytes(bankmeta_bytes)
+        if output_bank:
+            (out_path / f'{file_name}.zbank').write_bytes(bank_bytes)
+
+    #region Compile Helpers
     def _add_to_registry(self, item, hash, registry):
         if hash not in registry:
             registry[hash] = item
@@ -204,7 +296,7 @@ class InstrumentBank:
         # it is placed right after the instrument list.
         self._drum_list = BankPointer()
         if len(self.drums) > 0:
-            self._drum_list.addr = align_to(self._instrument_list.addr + (len(self.instruments) * 4), 0x10)
+            self._drum_list.addr = allocator.align_to(self._instrument_list.addr + (len(self.instruments) * 4), 0x10)
         else:
             self._drum_list.addr = 0
 
@@ -213,10 +305,10 @@ class InstrumentBank:
         # it is placed right after the drum list.
         self._effect_list = BankPointer()
         if len(self.effects) > 0:
-            self._effect_list.addr = align_to(self._drum_list.addr + (len(self.drums) * 4), 0x10)
+            self._effect_list.addr = allocator.align_to(self._drum_list.addr + (len(self.drums) * 4), 0x10)
 
         # Calulate data address
-        allocator.addr = align_to(
+        allocator.addr = allocator.align_to(
             max(
                 self._instrument_list.addr + (len(self.instruments) * 4),
                 self._drum_list.addr + (len(self.drums) * 4) if self._drum_list.addr > 0 else 0,
@@ -247,99 +339,7 @@ class InstrumentBank:
 
         for envelope in self._envelope_registry.values():
             allocator.reserve_mem(envelope, envelope.size(), aligned=True)
-
-    def to_bytes(self, truncate_index_entry: bool = False) -> tuple[bytes, bytes]:
-        """
-        Compiles an `InstrumentBank` object from memory to binary.
-
-        Returns
-        ----------
-        tuple[bytes, bytes]
-            A tuple containing the bank's index entry and binary data.
-        """
-
-        # Reference deduplication
-        # ————————————————————————————————————————————————————————————————
-        # If duplicate data exists in the bank, then the data should be
-        # replaced with already known existing data
-        for instrument in self.instruments:
-            self._process_instrument(instrument)
-
-        for drum in self.drums:
-            self._process_drum(drum)
-
-        for effect in self.effects:
-            self._process_effect(effect)
-
-        self.instruments = [
-            self._instrument_registry[instrument.get_hash()] if instrument else None
-            for instrument in self.instruments
-        ]
-        self.drums = [
-            self._drum_registry[drum.get_hash()] if drum else None
-            for drum in self.drums
-        ]
-        self.effects = [
-            self._effect_registry[effect.get_hash()] if effect else None
-            for effect in self.effects
-        ]
-        self._reassign_registry_refs()
-
-        # Pointer allocation
-        allocator = MemoryAllocator()
-        self._assign_addresses(allocator)
-
-        # Create the buffer
-        buffer = bytearray(align_to(allocator.addr, 0x10))
-
-        # Write drum list and effect list pointers
-        struct.pack_into('>2I', buffer, 0x00,
-                         self._drum_list.addr,
-                         self._effect_list.addr)
-
-        # Write pointer lists
-        for i, instrument in enumerate(self.instruments):
-            struct.pack_into('>I', buffer, self._instrument_list.addr + (i * 4),
-                             instrument._address if instrument else 0) # _address is assigned in MemoryAllocator.reserve_mem()
-
-        for i, drum in enumerate(self.drums):
-            struct.pack_into('>I', buffer, self._drum_list.addr + (i * 4),
-                             drum._address if drum else 0) # _address is assigned in MemoryAllocator.reserve_mem()
-
-        for i, effect in enumerate(self.effects):
-            if effect is None:
-                continue
-            start = self._effect_list.addr + (i * 8)
-            buffer[start:start + 8] = effect.to_bytes()
-
-        # Write structs
-        for addr, obj in sorted(allocator.entries, key=lambda x: x[0]):
-            if obj is None:
-                continue
-            elif isinstance(obj, BankPointer):
-                continue
-
-            data = obj.to_bytes()
-            buffer[addr:addr + len(data)] = data
-
-        if truncate_index_entry:
-            return (self.index_entry.to_bytes()[-8:], bytes(buffer))
-        else:
-            return (self.index_entry.to_bytes()[-8:], bytes(buffer))
-
-    def write_bytes(self, file_name: str, file_path: str, output_metadata: bool = True, truncate_metadata: bool = False, output_bank: bool = True):
-        """
-        Compiles an `InstrumentBank` object from memory to binary, then writes the output to a file.
-        """
-        from pathlib import Path
-
-        out_path = Path(file_path)
-        bankmeta_bytes, bank_bytes = self.to_bytes(truncate_index_entry=truncate_metadata)
-
-        if output_metadata:
-            (out_path / f'{file_name}.bankmeta').write_bytes(bankmeta_bytes)
-        if output_bank:
-            (out_path / f'{file_name}.zbank').write_bytes(bank_bytes)
+    #endregion
 
     def __repr__(self):
         lines = [f'{type(self).__name__}(']

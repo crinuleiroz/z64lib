@@ -8,4 +8,4 @@ class NamedIntEnum(IntEnum):
 
     def describe(self):
         """ Return a (name, value) tuple for convenience. """
-        return self.name, self.value
+        return f"(name={self.name}, value={self.value})"

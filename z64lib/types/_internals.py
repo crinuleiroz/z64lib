@@ -1,5 +1,3 @@
-from z64lib.core.alignment import align_field
-
 def walk_fields(fields, callback, start_offset: int = 0) -> int:
     """
     Walks through the fields of a struct, calling `callback` for each field.
@@ -8,7 +6,7 @@ def walk_fields(fields, callback, start_offset: int = 0) -> int:
     ----------
     fields: list
         List of struct field definitions (_fields_).
-    callback: Callable[[name, field_type, offset, extra], int]
+    callback: Callable[[name, data_type, offset, extra], int]
         Function called for each field. Must return the new offset after processing.
     start_offset: int
         Starting offset.
@@ -26,9 +24,9 @@ def walk_fields(fields, callback, start_offset: int = 0) -> int:
         match len(field):
             # Primitive, pointer, array, or union
             case 2:
-                name, field_type = field
-                offset = align_field(offset, field_type)
-                offset = callback(name, field_type, offset, None)
+                name, data_type = field
+                offset = data_type.align_field(offset, data_type)
+                offset = callback(name, data_type, offset, None)
                 bit_cursor = 0
                 last_bitfield_type = None
 
@@ -39,7 +37,7 @@ def walk_fields(fields, callback, start_offset: int = 0) -> int:
                 # Grouped bitfields
                 if isinstance(subfields, list):
                     base_type = subfields[0][1]
-                    offset = align_field(offset, base_type)
+                    offset = base_type.align_field(offset, base_type)
                     offset = callback(name, container_or_type, offset, subfields)
                     bit_cursor = 0
                     last_bitfield_type = None
@@ -50,12 +48,13 @@ def walk_fields(fields, callback, start_offset: int = 0) -> int:
                     if last_bitfield_type != base_type:
                         bit_cursor = 0
                         last_bitfield_type = base_type
-                        offset = align_field(offset, base_type)
+                        offset = base_type.align_field(offset, base_type)
 
                     offset = callback(name, base_type, offset, subfields)
                     bit_cursor += subfields
-                    if bit_cursor >= base_type.size * 8:
-                        offset += base_type.size
+
+                    if bit_cursor >= base_type.size() * 8:
+                        offset += base_type.size()
                         bit_cursor = 0
                         last_bitfield_type = None
 
