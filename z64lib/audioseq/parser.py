@@ -70,6 +70,7 @@ class AseqParser:
                 if delay < 0:
                     break
                 frag.data.append((delay, arg)) # Change to something more concrete later
+                addr += 4
         if isinstance(frag, AseqFilter):
             ...
         if isinstance(frag, AseqArray):
