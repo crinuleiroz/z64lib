@@ -19,7 +19,6 @@ from ._audiotable_type import AudiotableType
 from ._audio_load_status import AudioLoadStatus
 from ._audio_manager_debug_level import AudioManagerDebugLevel
 from ._aseq_version import AseqVersion
-from ._aseq_opcode import AseqFlowOpcode, AseqMetaOpcode, AseqChanOpcode, AseqLayerOpcode
 from ._aseq_sections import AseqSection, SECTION_ALL
 
 __all__ = [
@@ -38,10 +37,6 @@ __all__ = [
     "AudioLoadStatus",
     "AudioManagerDebugLevel",
     "AseqVersion",
-    "AseqFlowOpcode",
-    "AseqMetaOpcode",
-    "AseqChanOpcode",
-    "AseqLayerOpcode",
     "AseqSection",
     "SECTION_ALL",
 ]
