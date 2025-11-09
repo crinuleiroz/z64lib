@@ -10,6 +10,3 @@ class AseqSection(Enum):
     # ENVELOPE = "envelope"
     # FILTER = "filter"
     # UNK = "unk"
-
-
-SECTION_ALL = (AseqSection.META, AseqSection.CHAN, AseqSection.LAYER)

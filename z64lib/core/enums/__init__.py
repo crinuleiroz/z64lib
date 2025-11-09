@@ -19,7 +19,7 @@ from ._audiotable_type import AudiotableType
 from ._audio_load_status import AudioLoadStatus
 from ._audio_manager_debug_level import AudioManagerDebugLevel
 from ._aseq_version import AseqVersion
-from ._aseq_sections import AseqSection, SECTION_ALL
+from ._aseq_sections import AseqSection
 
 __all__ = [
     "NamedIntEnum",
@@ -37,6 +37,5 @@ __all__ = [
     "AudioLoadStatus",
     "AudioManagerDebugLevel",
     "AseqVersion",
-    "AseqSection",
-    "SECTION_ALL",
+    "AseqSection"
 ]
