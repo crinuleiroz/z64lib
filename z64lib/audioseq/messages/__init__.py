@@ -3,7 +3,12 @@ z64lib.audioseq.messages
 =====
 """
 
-from ._message_spec import AseqMessage, AseqMessageSpec
+from ._message_spec import (
+    AseqMessage, NoArgsMessage, ArgU8Message, ArgS8Message,
+    ArgU16Message, ArgS16Message, ArgU16_U8_Message, ArgVarMessage,
+    PortamentoMessage, AseqMetaMessage, AseqChanMessage, AseqLayerMessage,
+    AseqMessageSpec
+)
 from ._control_flow import (
     AseqFlow_End, AseqFlow_Delay1, AseqFlow_Delay, AseqFlow_Call,
     AseqFlow_Jump, AseqFlow_BranchEqual, AseqFlow_BranchLessThan,
@@ -39,6 +44,17 @@ ALL_MESSAGES = [
 __all__ = [
     # Message Spec
     "AseqMessage",
+    "NoArgsMessage",
+    "ArgU8Message",
+    "ArgS8Message",
+    "ArgU16Message",
+    "ArgS16Message",
+    "ArgU16_U8_Message",
+    "ArgVarMessage",
+    "PortamentoMessage",
+    "AseqMetaMessage",
+    "AseqChanMessage",
+    "AseqLayerMessage",
     "AseqMessageSpec",
     # Control Flow
     "AseqFlow_End",

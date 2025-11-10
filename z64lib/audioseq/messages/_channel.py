@@ -1,13 +1,19 @@
-import struct
 from z64lib.audioseq.args import *
-from z64lib.audioseq.messages import AseqMessage
+from z64lib.audioseq.messages import (
+    AseqChanMessage, NoArgsMessage, ArgU8Message, ArgS8Message,
+    ArgU16Message, ArgS16Message, ArgVarMessage, PortamentoMessage
+)
 from z64lib.core.enums import AseqVersion, AseqSection
 
 
-class AseqChannel_LoadLayer(AseqMessage):
+#region Non-Argbits
+#endregion
+
+
+#region Argbits
+class AseqChannel_LoadLayer(AseqChanMessage):
     opcode_range = range(0x88, 0x90) # 8 Note Layers?
     size = 3
-    sections = (AseqSection.CHAN,)
     is_pointer = True
 
     def __init__(self, note_layer: int, addr: int):
@@ -17,9 +23,10 @@ class AseqChannel_LoadLayer(AseqMessage):
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
         opcode = data[offset]
-        _, arg = struct.unpack_from('>BH', data, offset)
+        arg = cls.read_u16(data, offset)
         ly = opcode & 0x07
         return cls(ly, arg)
 
     def __repr__(self):
         return f'AseqChan_LoadLayer(ly={hex(self.note_layer)}, addr={hex(self.args[0].value)})'
+#endregion

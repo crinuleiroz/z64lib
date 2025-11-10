@@ -1,7 +1,9 @@
+import struct
 from z64lib.audioseq.args import *
 from z64lib.core.enums import AseqVersion, AseqSection
 
 
+#region Base Class
 class AseqMessage:
     opcode: int = 0x00
     opcode_range: range | None = None
@@ -18,7 +20,154 @@ class AseqMessage:
     def from_bytes(cls, data: bytes, offset: int):
         return NotImplementedError
 
+    @classmethod
+    def read_u8(cls, data: bytes, offset: int) -> int:
+        return struct.unpack_from('>B', data, offset + 1)[0]
 
+    @classmethod
+    def read_s8(cls, data: bytes, offset: int) -> int:
+        return struct.unpack_from('>b', data, offset + 1)[0]
+
+    @classmethod
+    def read_u16(cls, data: bytes, offset: int) -> int:
+        return struct.unpack_from('>H', data, offset + 1)[0]
+
+    @classmethod
+    def read_s16(cls, data: bytes, offset: int) -> int:
+        return struct.unpack_from('>h', data, offset + 1)[0]
+
+    @classmethod
+    def read_argvar(cls, data: bytes, offset: int) -> tuple[int, int]:
+        arglen = cls.read_u8(data, offset)
+
+        if arglen & 0x80:
+            val = cls.read_u16(data, offset)
+            return val, 3
+        else:
+            return arglen, 2
+
+    @classmethod
+    def read_portamento(cls, data: bytes, offset: int) -> tuple[int, ...]:
+        mode = cls.read_u8(data, offset)
+        note = cls.read_u8(data, offset + 1)
+        is_special = (mode & 0x80) != 0
+
+        if is_special:
+            time = cls.read_u8(data, offset + 2)
+            size = 4
+        else:
+            val, var_size = cls.read_argvar(data, offset + 2)
+            time = val
+            size = 2 + var_size
+
+        return mode, note, time, size
+#endregion
+
+
+#region Subclasses
+class NoArgsMessage(AseqMessage):
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        assert data[offset] == cls.opcode
+        return cls()
+
+
+class ArgU8Message(AseqMessage):
+    size = 2
+
+    def __init__(self, arg_u8: int):
+        self.args = (ArgU8(arg_u8),)
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_u8 = cls.read_u8(data, offset)
+        return cls(arg_u8)
+
+
+class ArgS8Message(AseqMessage):
+    size = 2
+
+    def __init__(self, arg_s8: int):
+        self.args = (ArgU8(arg_s8),)
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_s8 = cls.read_s8(data, offset)
+        return cls(arg_s8)
+
+
+class ArgU16Message(AseqMessage):
+    size = 3
+
+    def __init__(self, arg_u16: int):
+        self.args = (ArgU16(arg_u16),)
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_u16 = cls.read_u16(data, offset)
+        return cls(arg_u16)
+
+
+class ArgS16Message(AseqMessage):
+    size = 3
+
+    def __init__(self, arg_s16: int):
+        self.args = (ArgS16(arg_s16),)
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_s16 = cls.read_s16(data, offset)
+        return cls(arg_s16)
+
+
+class ArgU16_U8_Message(AseqMessage):
+    size = 4
+
+    def __init__(self, arg_u16: int, arg_u8: int):
+        self.args = (ArgU16(arg_u16), ArgU8(arg_u8))
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_u16 = cls.read_u16(data, offset)
+        arg_u8 = cls.read_u8(data, offset + 2)
+        return cls(arg_u16, arg_u8)
+
+class ArgVarMessage(AseqMessage):
+    def __init__(self, arg_var: int, size: int):
+        self.args = (ArgVar(arg_var),)
+        self.size = size
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_var, size = cls.read_argvar(data, offset)
+        return cls(arg_var, size)
+
+
+class PortamentoMessage(AseqMessage):
+    def __init__(self, mode: int, note: int, time: int, size: int):
+        self.args = (ArgU8(mode), ArgU8(note), ArgVar(time))
+        self.size = size
+
+    @classmethod
+    def from_bytes(cls, data, offset):
+        mode, note, time, size = cls.read_portamento(data, offset)
+        return cls(mode, note, time, size)
+
+
+class AseqMetaMessage(AseqMessage):
+    sections = (AseqSection.META,)
+
+
+class AseqChanMessage(AseqMessage):
+    sections = (AseqSection.CHAN,)
+
+
+class AseqLayerMessage(AseqMessage):
+    sections = (AseqSection.LAYER,)
+#endregion
+
+
+#region Spec Class
 class AseqMessageSpec:
     # mapping section -> opcode -> list of message classes
     _spec_by_section: dict[AseqSection, dict[int, list[type['AseqMessage']]]]= {
@@ -50,3 +199,4 @@ class AseqMessageSpec:
             if c.version == AseqVersion.BOTH or c.version == version:
                 return c
         return None
+#endregion
