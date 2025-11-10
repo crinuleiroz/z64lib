@@ -1,4 +1,4 @@
-from z64lib.audioseq.messages import AseqMessage, NoArgsMessage, ArgU8Message, ArgU16Message, ArgVarMessage
+from z64lib.audioseq.messages import NoArgsMessage, ArgU8Message, ArgU16Message, ArgVarMessage
 from z64lib.core.enums import AseqSection
 
 
@@ -6,9 +6,6 @@ class AseqFlow_End(NoArgsMessage):
     """"""
     opcode = 0xFF
     is_terminal = True
-
-    def __repr__(self):
-        return f'AseqFlow_End(opcode=0xFF)'
 
 
 class AseqFlow_Delay1(NoArgsMessage):
@@ -20,9 +17,6 @@ class AseqFlow_Delay(ArgVarMessage):
     """"""
     opcode = 0xFD
     sections = (AseqSection.META, AseqSection.CHAN)
-
-    def __repr__(self):
-        return f'AseqFlow_Delay(delay={hex(self.args[0].value)})'
 
 
 class AseqFlow_Call(ArgU16Message):

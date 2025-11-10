@@ -28,5 +28,6 @@ class AseqMeta_LoadChannel(AseqMetaMessage):
         return cls(ch, arg)
 
     def __repr__(self):
-        return f'AseqMeta_LoadChannel(ch={hex(self.channel)}, addr={hex(self.args[0].value)})'
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(ch={self.channel + 1}, arg_u16=0x{self.args[0].value:X})'
 #endregion

@@ -71,6 +71,10 @@ class NoArgsMessage(AseqMessage):
         assert data[offset] == cls.opcode
         return cls()
 
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(opcode=0x{self.opcode:X})'
+
 
 class ArgU8Message(AseqMessage):
     size = 2
@@ -82,6 +86,10 @@ class ArgU8Message(AseqMessage):
     def from_bytes(cls, data: bytes, offset: int):
         arg_u8 = cls.read_u8(data, offset)
         return cls(arg_u8)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_u8=0x{self.args[0].value:X})'
 
 
 class ArgS8Message(AseqMessage):
@@ -95,6 +103,10 @@ class ArgS8Message(AseqMessage):
         arg_s8 = cls.read_s8(data, offset)
         return cls(arg_s8)
 
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_s8=0x{self.args[0].value:X})'
+
 
 class ArgU16Message(AseqMessage):
     size = 3
@@ -107,6 +119,10 @@ class ArgU16Message(AseqMessage):
         arg_u16 = cls.read_u16(data, offset)
         return cls(arg_u16)
 
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_u16=0x{self.args[0].value:X})'
+
 
 class ArgS16Message(AseqMessage):
     size = 3
@@ -118,6 +134,10 @@ class ArgS16Message(AseqMessage):
     def from_bytes(cls, data: bytes, offset: int):
         arg_s16 = cls.read_s16(data, offset)
         return cls(arg_s16)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_s16=0x{self.args[0].value:X})'
 
 
 class ArgU16_U8_Message(AseqMessage):
@@ -132,6 +152,11 @@ class ArgU16_U8_Message(AseqMessage):
         arg_u8 = cls.read_u8(data, offset + 2)
         return cls(arg_u16, arg_u8)
 
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_u16=0x{self.args[0].value:X}, arg_u8=0x{self.args[1].value:X})'
+
+
 class ArgVarMessage(AseqMessage):
     def __init__(self, arg_var: int, size: int):
         self.args = (ArgVar(arg_var),)
@@ -141,6 +166,10 @@ class ArgVarMessage(AseqMessage):
     def from_bytes(cls, data: bytes, offset: int):
         arg_var, size = cls.read_argvar(data, offset)
         return cls(arg_var, size)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_var=0x{self.args[0].value:X})'
 
 
 class PortamentoMessage(AseqMessage):
@@ -152,6 +181,10 @@ class PortamentoMessage(AseqMessage):
     def from_bytes(cls, data, offset):
         mode, note, time, size = cls.read_portamento(data, offset)
         return cls(mode, note, time, size)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(mode=0x{self.args[0].value:X}, note=0x{self.args[1].value:X}, time=0x{self.args[2].value:X})'
 
 
 class AseqMetaMessage(AseqMessage):

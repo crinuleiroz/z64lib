@@ -12,9 +12,6 @@ class AseqLayer_Delay(AseqLayerMessage, ArgVarMessage):
     """"""
     opcode = 0xC0
 
-    def __repr__(self):
-        return f'AseqLayer_Delay(delay={hex(self.args[0].value)})'
-
 
 class AseqLayer_ShortVelocity(AseqLayerMessage, ArgU8Message):
     opcode = 0xC1

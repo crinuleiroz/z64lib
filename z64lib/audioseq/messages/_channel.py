@@ -28,5 +28,6 @@ class AseqChannel_LoadLayer(AseqChanMessage):
         return cls(ly, arg)
 
     def __repr__(self):
-        return f'AseqChan_LoadLayer(ly={hex(self.note_layer)}, addr={hex(self.args[0].value)})'
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(ly={self.note_layer + 1}, arg_u16=0x{self.args[0].value:X})'
 #endregion
