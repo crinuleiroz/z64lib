@@ -35,7 +35,7 @@ class AseqChannel_LoadLayer(ChanMessage):
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
-        ly = data[offset] & 0x07
+        ly = cls.read_bits(data, offset, 3)
         arg = cls.read_u16(data, offset)
         return cls(ly, arg)
 

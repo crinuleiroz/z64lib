@@ -19,6 +19,12 @@ from ._message_spec import (
     ArgS16ArgU8Message,
     ArgVarMessage,
     PortamentoMessage,
+    NoteDVGMessage,
+    NoteDVMessage,
+    NoteVGMessage,
+    ShortDVGMessage,
+    ShortDVMessage,
+    ShortVGMessage,
     MetaMessage,
     ChanMessage,
     NoteLayerMessage,
@@ -102,6 +108,14 @@ from ._note_layer import (
     AseqLayer_DecayIndex,
     AseqLayer_F0,
     AseqLayer_SurroundEffect,
+    AseqLayer_LoadShortVel,
+    AseqLayer_LoadShortGate,
+    AseqLayer_NoteDVG,
+    AseqLayer_NoteDV,
+    AseqLayer_NoteVG,
+    AseqLayer_ShortDVG,
+    AseqLayer_ShortDV,
+    AseqLayer_ShortVG
 )
 
 
@@ -183,6 +197,14 @@ ALL_MESSAGES = [
     AseqLayer_DecayIndex,
     AseqLayer_F0,
     AseqLayer_SurroundEffect,
+    AseqLayer_LoadShortVel,
+    AseqLayer_LoadShortGate,
+    AseqLayer_NoteDVG,
+    AseqLayer_NoteDV,
+    AseqLayer_NoteVG,
+    AseqLayer_ShortDVG,
+    AseqLayer_ShortDV,
+    AseqLayer_ShortVG
 ]
 
 
@@ -203,6 +225,12 @@ __all__ = [
     "ArgS16ArgU8Message",
     "ArgVarMessage",
     "PortamentoMessage",
+    "NoteDVGMessage",
+    "NoteDVMessage",
+    "NoteVGMessage",
+    "ShortDVGMessage",
+    "ShortDVMessage",
+    "ShortVGMessage",
     "MetaMessage",
     "ChanMessage",
     "NoteLayerMessage",
@@ -281,6 +309,14 @@ __all__ = [
     "AseqLayer_DecayIndex",
     "AseqLayer_F0",
     "AseqLayer_SurroundEffect",
+    "AseqLayer_LoadShortVel",
+    "AseqLayer_LoadShortGate",
+    "AseqLayer_NoteDVG",
+    "AseqLayer_NoteDV",
+    "AseqLayer_NoteVG",
+    "AseqLayer_ShortDVG",
+    "AseqLayer_ShortDV",
+    "AseqLayer_ShortVG",
     # Misc.
     "ALL_MESSAGES"
 ]

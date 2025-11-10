@@ -6,7 +6,13 @@ from z64lib.audioseq.messages import (
     ArgS16Message,
     ArgU16ArgU8Message,
     ArgVarMessage,
-    PortamentoMessage
+    PortamentoMessage,
+    NoteDVGMessage,
+    NoteDVMessage,
+    NoteVGMessage,
+    ShortDVGMessage,
+    ShortDVMessage,
+    ShortVGMessage
 )
 from z64lib.core.enums import AseqVersion
 
@@ -90,38 +96,54 @@ class AseqLayer_SurroundEffect(NoteLayerMessage, ArgU8Message):
 
 
 #region Argbits
-# class AseqLayer_LoadShortVel(NoteLayerMessage):
-#     opcode_range = range(0xD0, 0xE0)
+class AseqLayer_LoadShortVel(NoteLayerMessage):
+    opcode_range = range(0xD0, 0xE0)
+
+    def __init__(self, index: int):
+        self.index = index
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        idx = cls.read_bits(data, offset, 4)
+        return cls(idx)
 
 
-# class AseqLayer_LoadShortGate(NoteLayerMessage):
-#     opcode_range = range(0xE0, 0xF0)
+class AseqLayer_LoadShortGate(NoteLayerMessage):
+    opcode_range = range(0xE0, 0xF0)
+
+    def __init__(self, index: int):
+        self.index = index
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        idx = cls.read_bits(data, offset, 4)
+        return cls(idx)
 #endregion
 
 
 #region Notes
 # Legato
-# class AseqLayer_NoteDVG(NoteLayerMessage):
-#     opcode_range = range(0x00, 0x40)
+class AseqLayer_NoteDVG(NoteLayerMessage, NoteDVGMessage):
+    opcode_range = range(0x00, 0x40)
 
 
-# class AseqLayer_NoteDV(NoteLayerMessage):
-#     opcode_range = range(0x40, 0x80)
+class AseqLayer_NoteDV(NoteLayerMessage, NoteDVMessage):
+    opcode_range = range(0x40, 0x80)
 
 
-# class AseqLayer_NoteVG(NoteLayerMessage):
-#     opcode_range = range(0x80, 0xC0)
+class AseqLayer_NoteVG(NoteLayerMessage, NoteVGMessage):
+    opcode_range = range(0x80, 0xC0)
 
 
 # Staccato
-# class AseqLayer_ShortDVG(NoteLayerMessage):
-#     opcode_range = range(0x00, 0x40)
+class AseqLayer_ShortDVG(NoteLayerMessage, ShortDVGMessage):
+    opcode_range = range(0x00, 0x40)
 
 
-# class AseqLayer_ShortDV(NoteLayerMessage):
-#     opcode_range = range(0x40, 0x80)
+class AseqLayer_ShortDV(NoteLayerMessage, ShortDVMessage):
+    opcode_range = range(0x40, 0x80)
 
 
-# class AseqLayer_ShortVG(NoteLayerMessage):
-#     opcode_range = range(0x80, 0xC0)
+class AseqLayer_ShortVG(NoteLayerMessage, ShortVGMessage):
+    opcode_range = range(0x80, 0xC0)
 #endregion

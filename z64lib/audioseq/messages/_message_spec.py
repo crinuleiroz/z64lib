@@ -153,7 +153,7 @@ class ArgU8ArgU8Message(AseqMessage):
     size = 3
 
     def __init__(self, arg_u8_1: int, arg_u8_2: int):
-        self.args = (ArgU8(arg_u8_1), ArgU16(arg_u8_2))
+        self.args = (ArgU8(arg_u8_1), ArgU16(arg_u8_2),)
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
@@ -170,7 +170,7 @@ class ArgU8ArgU16Message(AseqMessage):
     size = 4
 
     def __init__(self, arg_u8: int, arg_u16: int):
-        self.args = (ArgU8(arg_u8), ArgU16(arg_u16))
+        self.args = (ArgU8(arg_u8), ArgU16(arg_u16),)
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
@@ -187,7 +187,7 @@ class ArgS8ArgU16Message(AseqMessage):
     size = 4
 
     def __init__(self, arg_s8: int, arg_u16: int):
-        self.args = (ArgS8(arg_s8), ArgU16(arg_u16))
+        self.args = (ArgS8(arg_s8), ArgU16(arg_u16),)
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
@@ -204,7 +204,7 @@ class ArgU8ArgS16Message(AseqMessage):
     size = 4
 
     def __init__(self, arg_u8: int, arg_s16: int):
-        self.args = (ArgS8(arg_u8), ArgU16(arg_s16))
+        self.args = (ArgS8(arg_u8), ArgU16(arg_s16),)
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
@@ -221,7 +221,7 @@ class ArgS8ArgS16Message(AseqMessage):
     size = 4
 
     def __init__(self, arg_s8: int, arg_s16: int):
-        self.args = (ArgS8(arg_s8), ArgU16(arg_s16))
+        self.args = (ArgS8(arg_s8), ArgU16(arg_s16),)
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
@@ -270,7 +270,7 @@ class ArgU16ArgU8Message(AseqMessage):
     size = 4
 
     def __init__(self, arg_u16: int, arg_u8: int):
-        self.args = (ArgU16(arg_u16), ArgU8(arg_u8))
+        self.args = (ArgU16(arg_u16), ArgU8(arg_u8),)
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
@@ -287,7 +287,7 @@ class ArgS16ArgU8Message(AseqMessage):
     size = 4
 
     def __init__(self, arg_s16: int, arg_u8: int):
-        self.args = (ArgU16(arg_s16), ArgU8(arg_u8))
+        self.args = (ArgU16(arg_s16), ArgU8(arg_u8),)
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
@@ -328,6 +328,118 @@ class PortamentoMessage(AseqMessage):
     def __repr__(self):
         cls_name = self.__class__.__name__
         return f'{cls_name}(mode=0x{self.args[0].value:X}, note=0x{self.args[1].value:X}, time=0x{self.args[2].value:X})'
+
+
+class NoteDVGMessage(AseqMessage):
+    def __init__(self, note: int, delay: int, velocity: int, gate: int, size: int):
+        self.note = note
+        self.args = (ArgVar(delay), ArgU8(velocity), ArgU8(gate),)
+        self.size = size
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        note = cls.read_bits(data, offset, 6)
+        delay, delay_size = cls.read_argvar(data, offset)
+
+        velocity_offset = offset + delay_size
+        gate_offset = offset + delay_size
+
+        velocity = cls.read_u8(data, velocity_offset)
+        gate = cls.read_u8(data, gate_offset)
+
+        # Opcode + ArgVar + ArgU8 + ArgU8
+        size = 1 + delay_size + 2
+
+        return cls(note, delay, velocity, gate, size)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(note={self.note}, delay=0x{self.args[0].value:X}, velocity=0x{self.args[1].value:X}, gate=0x{self.args[2].value:X})'
+
+
+class NoteDVMessage(AseqMessage):
+    def __init__(self, note: int, delay: int, velocity: int, size: int):
+        self.note = note
+        self.args = (ArgVar(delay), ArgU8(velocity),)
+        self.size = size
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        note = cls.read_bits(data, offset, 6)
+        delay, delay_size = cls.read_argvar(data, offset)
+
+        velocity_offset = offset + delay_size
+
+        velocity = cls.read_u8(data, velocity_offset)
+
+        # Opcode + ArgVar + ArgU8
+        size = 1 + delay_size + 1
+
+        return cls(note, delay, velocity, size)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(note={self.note}, delay=0x{self.args[0].value:X}, velocity=0x{self.args[1].value:X})'
+
+
+class NoteVGMessage(AseqMessage):
+    size = 3
+
+    def __init__(self, note: int, velocity: int, gate: int):
+        self.note = note
+        self.args = (ArgU8(velocity), ArgU8(gate),)
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        note = cls.read_bits(data, offset, 6)
+        velocity = cls.read_u8(data, offset)
+        gate = cls.read_u8(data, offset + 1)
+
+        return cls(note, velocity, gate)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(note={self.note}, velocity=0x{self.args[0].value:X}, gate=0x{self.args[1].value:X})'
+
+
+class ShortDVGMessage(AseqMessage):
+    def __init__(self, note: int, delay: int, size: int):
+        self.note = note
+        self.args = (ArgVar(delay),)
+        self.size = size
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        note = cls.read_bits(data, offset, 6)
+        delay, delay_size = cls.read_argvar(data, offset)
+
+        # Opcode + ArgVar
+        size = 1 + delay_size
+
+        return cls(note, delay, size)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(note={self.note}, delay=0x{self.args[0].value:X})'
+
+
+class ShortDVMessage(AseqMessage):
+    size = 1
+
+    def __init__(self, note: int):
+        self.note = note
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        note = cls.read_bits(data, offset, 6)
+        return cls(note)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(note={self.note})'
+
+
+class ShortVGMessage(ShortDVMessage): ...
 
 
 class MetaMessage(AseqMessage):
