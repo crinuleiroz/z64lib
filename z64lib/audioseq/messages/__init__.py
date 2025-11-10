@@ -21,9 +21,13 @@ from ._meta import (
 from ._channel import (
     AseqChannel_LoadLayer,
 )
-# from ._note_layer import (
-
-# )
+from ._note_layer import (
+    AseqLayer_DecayIndex, AseqLayer_Delay, AseqLayer_Envelope, AseqLayer_F0,
+    AseqLayer_Instrument, AseqLayer_Legato, AseqLayer_NoDrumPan, AseqLayer_NoPortamento,
+    AseqLayer_NotePan, AseqLayer_PitchBend2Semitones, AseqLayer_Portamento, AseqLayer_ShortDelay,
+    AseqLayer_ShortGate, AseqLayer_ShortVelocity, AseqLayer_Staccato, AseqLayer_Stereo,
+    AseqLayer_SurroundEffect, AseqLayer_Transpose
+)
 
 ALL_MESSAGES = [
     # Control Flow
@@ -39,6 +43,11 @@ ALL_MESSAGES = [
     AseqChannel_LoadLayer,
 
     # Note Layer
+    AseqLayer_DecayIndex, AseqLayer_Delay, AseqLayer_Envelope, AseqLayer_F0,
+    AseqLayer_Instrument, AseqLayer_Legato, AseqLayer_NoDrumPan, AseqLayer_NoPortamento,
+    AseqLayer_NotePan, AseqLayer_PitchBend2Semitones, AseqLayer_Portamento, AseqLayer_ShortDelay,
+    AseqLayer_ShortGate, AseqLayer_ShortVelocity, AseqLayer_Staccato, AseqLayer_Stereo,
+    AseqLayer_SurroundEffect, AseqLayer_Transpose
 ]
 
 __all__ = [
@@ -76,7 +85,24 @@ __all__ = [
     # Channel
     "AseqChannel_LoadLayer",
     # Note Layer
-
+    "AseqLayer_DecayIndex",
+    "AseqLayer_Delay",
+    "AseqLayer_Envelope",
+    "AseqLayer_F0",
+    "AseqLayer_Instrument",
+    "AseqLayer_Legato",
+    "AseqLayer_NoDrumPan",
+    "AseqLayer_NoPortamento",
+    "AseqLayer_NotePan",
+    "AseqLayer_PitchBend2Semitones",
+    "AseqLayer_Portamento",
+    "AseqLayer_ShortDelay",
+    "AseqLayer_ShortGate",
+    "AseqLayer_ShortVelocity",
+    "AseqLayer_Staccato",
+    "AseqLayer_Stereo",
+    "AseqLayer_SurroundEffect",
+    "AseqLayer_Transpose",
     # Misc.
     "ALL_MESSAGES"
 ]
