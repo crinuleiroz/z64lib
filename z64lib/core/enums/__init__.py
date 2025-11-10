@@ -5,7 +5,6 @@ z64lib.audio.audiobank.enums
 
 # Order matters, import non-dependents first, then dependents
 from ._named_int_enum import NamedIntEnum
-from ._versioned_int_enum import VersionedIntEnum
 from ._sound_setting import SoundSetting
 from ._sound_output_mode import SoundOutputMode
 from ._audio_sample_codec import AudioSampleCodec
@@ -23,7 +22,6 @@ from ._aseq_sections import AseqSection
 
 __all__ = [
     "NamedIntEnum",
-    "VersionedIntEnum",
     "SoundSetting",
     "SoundOutputMode",
     "AudioSampleCodec",
