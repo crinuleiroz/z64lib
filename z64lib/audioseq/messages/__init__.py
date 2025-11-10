@@ -70,7 +70,15 @@ from ._meta import (
     AseqMeta_ScriptCounter,
     AseqMeta_RunSequence,
     AseqMeta_MuteChannel,
+    AseqMeta_TestChannel,
+    AseqMeta_StopChannel,
+    AseqMeta_SubIO,
+    AseqMeta_LoadResource,
+    AseqMeta_StoreIO,
+    AseqMeta_LoadIO,
     AseqMeta_LoadChannel,
+    AseqMeta_LoadChannelRelative,
+    AseqMeta_LoadSequence
 )
 from ._channel import (
     AseqChannel_LoadLayer,
@@ -143,7 +151,15 @@ ALL_MESSAGES = [
     AseqMeta_ScriptCounter,
     AseqMeta_RunSequence,
     AseqMeta_MuteChannel,
+    AseqMeta_TestChannel,
+    AseqMeta_StopChannel,
+    AseqMeta_SubIO,
+    AseqMeta_LoadResource,
+    AseqMeta_StoreIO,
+    AseqMeta_LoadIO,
     AseqMeta_LoadChannel,
+    AseqMeta_LoadChannelRelative,
+    AseqMeta_LoadSequence,
 
     # Channel
     AseqChannel_LoadLayer,
@@ -235,7 +251,15 @@ __all__ = [
     "AseqMeta_ScriptCounter",
     "AseqMeta_RunSequence",
     "AseqMeta_MuteChannel",
+    "AseqMeta_TestChannel",
+    "AseqMeta_StopChannel",
+    "AseqMeta_SubIO",
+    "AseqMeta_LoadResource",
+    "AseqMeta_StoreIO",
+    "AseqMeta_LoadIO",
     "AseqMeta_LoadChannel",
+    "AseqMeta_LoadChannelRelative",
+    "AseqMeta_LoadSequence",
     # Channel
     "AseqChannel_LoadLayer",
     # Note Layer

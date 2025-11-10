@@ -16,6 +16,13 @@ class AseqMessage:
     sections: tuple['AseqSection', ...] = (AseqSection.META, AseqSection.CHAN, AseqSection.LAYER)
     version: 'AseqVersion' = AseqVersion.BOTH
 
+    # Argbits only come in 3 varieties
+    bitmasks = {
+        3: 0b00000111,
+        4: 0b00001111,
+        6: 0b00111111,
+    }
+
     def get_arg(self, index: int, default=None, output_type=None):
         if 0 <= index < len(self.args):
             v = self.args[index].value
@@ -44,6 +51,15 @@ class AseqMessage:
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
         return NotImplementedError
+
+    @classmethod
+    def read_bits(cls, data: bytes, offset: int, nbits: int = 4) -> int:
+        if nbits not in cls.bitmasks:
+            raise ValueError()
+
+        mask = cls.bitmasks[nbits]
+        msg_byte = data[offset]
+        return msg_byte & mask
 
     @classmethod
     def read_u8(cls, data: bytes, offset: int) -> int:

@@ -16,7 +16,7 @@ from z64lib.audioseq.messages import (
     ArgVarMessage,
     PortamentoMessage
 )
-from z64lib.core.enums import AseqVersion, AseqSection
+from z64lib.core.enums import AseqVersion
 
 
 #region Non-Argbits
@@ -135,22 +135,135 @@ class AseqMeta_MuteChannel(MetaMessage, ArgU16Message):
 
 
 #region Argbits
+class AseqMeta_TestChannel(MetaMessage):
+    opcode_range = range(0x00, 0x10)
+
+    def __init__(self, ch: int):
+        self.channel = ch
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        ch = cls.read_bits(data, offset, 4)
+        return cls(ch)
+
+
+class AseqMeta_StopChannel(MetaMessage):
+    opcode_range = range(0x40, 0x50)
+
+    def __init__(self, ch: int):
+        self.channel = ch
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        ch = cls.read_bits(data, offset, 4)
+        return cls(ch)
+
+
+class AseqMeta_SubIO(MetaMessage):
+    opcode_range = range(0x50, 0x58)
+
+    def __init__(self, io: int):
+        self.io_port = io
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        io = cls.read_bits(data, offset, 3)
+        return cls(io)
+
+
+class AseqMeta_LoadResource(MetaMessage):
+    opcode_range = range(0x60, 0x70)
+    size = 3
+
+    def __init__(self, ch: int, arg_u8_1: int, arg_u8_2: int):
+        self.channel = ch
+        self.args = (ArgU8(arg_u8_1), ArgU8(arg_u8_2))
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        ch = cls.read_bits(data, offset, 4)
+        arg_u8_1 = cls.read_u8(data, offset)
+        arg_u8_2 = cls.read_u8(data, offset + 1)
+        return cls(ch, arg_u8_1, arg_u8_2)
+
+
+class AseqMeta_StoreIO(MetaMessage):
+    opcode_range = range(0x70, 0x78)
+
+    def __init__(self, io: int):
+        self.io_port = io
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        io = cls.read_bits(data, offset, 3)
+        return cls(io)
+
+
+class AseqMeta_LoadIO(MetaMessage):
+    opcode_range = range(0x80, 0x88)
+
+    def __init__(self, io: int):
+        self.io_port = io
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        io = cls.read_bits(data, offset, 3)
+        return cls(io)
+
+
 class AseqMeta_LoadChannel(MetaMessage):
     opcode_range = range(0x90, 0xA0)
     size = 3
     is_pointer = True
 
-    def __init__(self, channel: int, addr: int):
-        self.channel = channel
-        self.args = (ArgU16(addr),)
+    def __init__(self, ch: int, arg_u16: int):
+        self.channel = ch
+        self.args = (ArgU16(arg_u16),)
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
-        ch = data[offset] & 0x0F
-        arg = cls.read_u16(data, offset)
-        return cls(ch, arg)
+        ch = cls.read_bits(data, offset, 4)
+        arg_u16 = cls.read_u16(data, offset)
+        return cls(ch, arg_u16)
 
     def __repr__(self):
         cls_name = self.__class__.__name__
         return f'{cls_name}(ch={self.channel + 1}, arg_u16=0x{self.args[0].value:X})'
+
+
+class AseqMeta_LoadChannelRelative(MetaMessage):
+    opcode_range = range(0xA0, 0xB0)
+    size = 3
+    is_pointer = True
+
+    def __init__(self, ch: int, arg_s16: int):
+        self.channel = ch
+        self.args = (ArgS16(arg_s16),)
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        ch = cls.read_bits(data, offset, 4)
+        arg_s16 = cls.read_s16(data, offset)
+        return cls(ch, arg_s16)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(ch={self.channel + 1}, arg_s16=0x{self.args[0].value:X})'
+
+
+class AseqMeta_LoadSequence(MetaMessage):
+    opcode_range = range(0xB0, 0xC0)
+    size = 4
+    is_pointer = True
+
+    def __init__(self, ch: int, arg_u8: int, arg_u16: int):
+        self.channel = ch
+        self.args = (ArgU8(arg_u8), ArgU16(arg_u16))
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        ch = cls.read_bits(data, offset, 4)
+        arg_u8 = cls.read_u8(data, offset)
+        arg_u16 = cls.read_u16(data, offset + 1)
+        return cls(ch, arg_u8, arg_u16)
 #endregion
