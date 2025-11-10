@@ -16,6 +16,31 @@ class AseqMessage:
     sections: tuple['AseqSection', ...] = (AseqSection.META, AseqSection.CHAN, AseqSection.LAYER)
     version: 'AseqVersion' = AseqVersion.BOTH
 
+    def get_arg(self, index: int, default=None, output_type=None):
+        if 0 <= index < len(self.args):
+            v = self.args[index].value
+        else:
+            v = default
+
+        conv = {
+            None: lambda v: v,
+            'int': lambda v: int(v),
+            'hex': lambda v: hex(int(v)),
+            'bin': lambda v: bin(int(v)),
+            'oct': lambda v: oct(int(v)),
+        }
+
+        if callable(output_type):
+            return output_type(v)
+
+        if isinstance(output_type, type):
+            return output_type(v)
+
+        if output_type in conv:
+            return conv[output_type](v)
+
+        raise ValueError()
+
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
         return NotImplementedError
@@ -108,6 +133,91 @@ class ArgS8Message(AseqMessage):
         return f'{cls_name}(arg_s8=0x{self.args[0].value:X})'
 
 
+class ArgU8ArgU8Message(AseqMessage):
+    size = 3
+
+    def __init__(self, arg_u8_1: int, arg_u8_2: int):
+        self.args = (ArgU8(arg_u8_1), ArgU16(arg_u8_2))
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_u8_1 = cls.read_u8(data, offset)
+        arg_u8_2 = cls.read_u8(data, offset + 1)
+        return cls(arg_u8_1, arg_u8_2)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_u8_1=0x{self.args[0].value:X}, arg_u8_2=0x{self.args[1].value:X})'
+
+
+class ArgU8ArgU16Message(AseqMessage):
+    size = 4
+
+    def __init__(self, arg_u8: int, arg_u16: int):
+        self.args = (ArgU8(arg_u8), ArgU16(arg_u16))
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_u8 = cls.read_u8(data, offset)
+        arg_u16 = cls.read_u16(data, offset + 1)
+        return cls(arg_u8, arg_u16)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_u8=0x{self.args[0].value:X}, arg_u16=0x{self.args[1].value:X})'
+
+
+class ArgS8ArgU16Message(AseqMessage):
+    size = 4
+
+    def __init__(self, arg_s8: int, arg_u16: int):
+        self.args = (ArgS8(arg_s8), ArgU16(arg_u16))
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_s8 = cls.read_s8(data, offset)
+        arg_u16 = cls.read_u16(data, offset + 1)
+        return cls(arg_s8, arg_u16)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_s8=0x{self.args[0].value:X}, arg_u16=0x{self.args[1].value:X})'
+
+
+class ArgU8ArgS16Message(AseqMessage):
+    size = 4
+
+    def __init__(self, arg_u8: int, arg_s16: int):
+        self.args = (ArgS8(arg_u8), ArgU16(arg_s16))
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_u8 = cls.read_u8(data, offset)
+        arg_s16 = cls.read_s16(data, offset + 1)
+        return cls(arg_u8, arg_s16)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_u8=0x{self.args[0].value:X}, arg_s16=0x{self.args[1].value:X})'
+
+
+class ArgS8ArgS16Message(AseqMessage):
+    size = 4
+
+    def __init__(self, arg_s8: int, arg_s16: int):
+        self.args = (ArgS8(arg_s8), ArgU16(arg_s16))
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_s8 = cls.read_s8(data, offset)
+        arg_s16 = cls.read_s16(data, offset + 1)
+        return cls(arg_s8, arg_s16)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_s8=0x{self.args[0].value:X}, arg_s16=0x{self.args[1].value:X})'
+
+
 class ArgU16Message(AseqMessage):
     size = 3
 
@@ -140,7 +250,7 @@ class ArgS16Message(AseqMessage):
         return f'{cls_name}(arg_s16=0x{self.args[0].value:X})'
 
 
-class ArgU16_U8_Message(AseqMessage):
+class ArgU16ArgU8Message(AseqMessage):
     size = 4
 
     def __init__(self, arg_u16: int, arg_u8: int):
@@ -155,6 +265,23 @@ class ArgU16_U8_Message(AseqMessage):
     def __repr__(self):
         cls_name = self.__class__.__name__
         return f'{cls_name}(arg_u16=0x{self.args[0].value:X}, arg_u8=0x{self.args[1].value:X})'
+
+
+class ArgS16ArgU8Message(AseqMessage):
+    size = 4
+
+    def __init__(self, arg_s16: int, arg_u8: int):
+        self.args = (ArgU16(arg_s16), ArgU8(arg_u8))
+
+    @classmethod
+    def from_bytes(cls, data: bytes, offset: int):
+        arg_s16 = cls.read_s16(data, offset)
+        arg_u8 = cls.read_u8(data, offset + 2)
+        return cls(arg_s16, arg_u8)
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return f'{cls_name}(arg_s16=0x{self.args[0].value:X}, arg_u8=0x{self.args[1].value:X})'
 
 
 class ArgVarMessage(AseqMessage):
@@ -187,15 +314,15 @@ class PortamentoMessage(AseqMessage):
         return f'{cls_name}(mode=0x{self.args[0].value:X}, note=0x{self.args[1].value:X}, time=0x{self.args[2].value:X})'
 
 
-class AseqMetaMessage(AseqMessage):
+class MetaMessage(AseqMessage):
     sections = (AseqSection.META,)
 
 
-class AseqChanMessage(AseqMessage):
+class ChanMessage(AseqMessage):
     sections = (AseqSection.CHAN,)
 
 
-class AseqLayerMessage(AseqMessage):
+class NoteLayerMessage(AseqMessage):
     sections = (AseqSection.LAYER,)
 #endregion
 

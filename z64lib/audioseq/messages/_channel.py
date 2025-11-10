@@ -1,7 +1,20 @@
 from z64lib.audioseq.args import *
 from z64lib.audioseq.messages import (
-    AseqChanMessage, NoArgsMessage, ArgU8Message, ArgS8Message,
-    ArgU16Message, ArgS16Message, ArgVarMessage, PortamentoMessage
+    ChanMessage,
+    NoArgsMessage,
+    ArgU8Message,
+    ArgS8Message,
+    ArgU8ArgU8Message,
+    ArgU8ArgU16Message,
+    ArgS8ArgU16Message,
+    ArgU8ArgS16Message,
+    ArgS8ArgS16Message,
+    ArgU16Message,
+    ArgS16Message,
+    ArgU16ArgU8Message,
+    ArgS16ArgU8Message,
+    ArgVarMessage,
+    PortamentoMessage
 )
 from z64lib.core.enums import AseqVersion, AseqSection
 
@@ -11,7 +24,7 @@ from z64lib.core.enums import AseqVersion, AseqSection
 
 
 #region Argbits
-class AseqChannel_LoadLayer(AseqChanMessage):
+class AseqChannel_LoadLayer(ChanMessage):
     opcode_range = range(0x88, 0x90) # 8 Note Layers?
     size = 3
     is_pointer = True
@@ -22,9 +35,8 @@ class AseqChannel_LoadLayer(AseqChanMessage):
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
-        opcode = data[offset]
+        ly = data[offset] & 0x07
         arg = cls.read_u16(data, offset)
-        ly = opcode & 0x07
         return cls(ly, arg)
 
     def __repr__(self):
