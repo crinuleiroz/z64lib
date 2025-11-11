@@ -3,6 +3,7 @@ from z64lib.audioseq.messages import AseqMessage
 
 #region Null
 class NullNoteLayer:
+    """"""
     addr: int = -1
     messages: list[AseqMessage] = []
     is_null: bool = True
@@ -11,6 +12,7 @@ NULL_NOTE_LAYER = NullNoteLayer()
 
 
 class NullChannel:
+    """"""
     addr: int = -1
     messages: list[AseqMessage] = []
     note_layers: list['NoteLayer'] = []
@@ -23,6 +25,7 @@ NULL_CHANNEL = NullChannel()
 
 
 class NullMetadata:
+    """"""
     addr: int = -1
     channels: list['Channel'] = []
     is_null: bool = True
@@ -36,24 +39,28 @@ NULL_METADATA = NullMetadata()
 
 #region Fragments
 class AseqFragment:
+    """"""
     def __init__(self, addr: int):
         self.addr = addr
         self.parent_section = None
 
 
 class AseqMessageFragment(AseqFragment):
+    """"""
     def __init__(self, addr: int):
         super().__init__(addr)
         self.messages: list[AseqMessage] = []
 
 
 class AseqDataFragment(AseqFragment):
+    """"""
     def __init__(self, addr: int, data: bytes | bytearray | None = None):
         super().__init__(addr)
         self.data = data
 
 
 class NoteLayer(AseqMessageFragment):
+    """"""
     is_null: bool = False
 
     def __init__(self, addr: int, is_legato: bool = False):
@@ -62,6 +69,7 @@ class NoteLayer(AseqMessageFragment):
 
 
 class Channel(AseqMessageFragment):
+    """"""
     is_null: bool = False
 
     def __init__(self, index: int, addr: int):
@@ -77,6 +85,7 @@ class Channel(AseqMessageFragment):
 
 
 class AseqMetadata(AseqMessageFragment):
+    """"""
     is_null: bool = False
 
     def __init__(self, addr: int):
@@ -98,6 +107,7 @@ class AseqFilter(AseqDataFragment): ...
 
 
 class AudioSequence:
+    """"""
     def __init__(self, aseq_version):
         # ASEQ version
         self.version = aseq_version
@@ -116,6 +126,7 @@ class AudioSequence:
         self.data: bytes | bytearray | None = None
 
     def get_section(self, index: int) -> AseqMetadata | NullMetadata:
+        """"""
         if 0 <= index < len(self.sections):
             return self.sections[index] or NULL_METADATA
         return NULL_METADATA

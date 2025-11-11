@@ -17,13 +17,17 @@ class AseqParser:
 
     def parse(self):
         """"""
+
+        # Register messages to their dictionaries
         for msg in ALL_MESSAGES:
             AseqMessageSpec.register(msg)
 
+        # Create and queue the sequence metadata
         meta = AseqMetadata(0x0000)
         self.sequence.sections.append(meta)
         self.queue.append(meta)
 
+        # Move through the queue until it is emptied
         while self.queue:
             frag = self.queue.pop(0)
             if frag.addr in self.visited:
@@ -35,32 +39,44 @@ class AseqParser:
             elif isinstance(frag, AseqDataFragment):
                 self._parse_data_fragment(frag)
 
+            # If the fragment is a data fragment,
+            # register it to its respective dictionary
             self._register_fragment(frag)
 
         return self.sequence
 
     def _parse_message_fragment(self, frag: AseqMessageFragment):
         """"""
-        offset = frag.addr
+        offset = frag.addr # Initial position
+
+        # Run through the sequence data byte by byte
+        # The position will be offset by the parsed message's
+        # total message size (opcode + args)
         while offset < len(self.data):
             opcode = self.data[offset]
             section_type = self._infer_section(frag)
             msg_cls = AseqMessageSpec.get_message_class(section_type, opcode, self.version, frag)
 
+            # Unknown opcode, continue to the next byte
+            # Unsafe, maybe breaking would be better?
             if msg_cls is None:
                 offset += 1
                 continue
 
+            # Store the message's data into its corresponding class
             msg = msg_cls.from_bytes(self.data, offset)
 
+            # If the message sets legato or staccato,
+            # change it for the entire fragment
             if isinstance(msg, (AseqChannel_Legato, AseqLayer_Legato,)):
                 frag.is_legato = True
             elif isinstance(msg, (AseqChannel_Staccato, AseqLayer_Staccato,)):
                 frag.is_legato = False
 
             frag.messages.append(msg)
-            offset += msg.size
+            offset += msg.size # Increment position
 
+            # Deal with pointers to other pieces of the sequence
             self._handle_message_reference(frag, msg)
 
             if msg.is_terminal:
@@ -98,6 +114,7 @@ class AseqParser:
                 frag.note_layers[msg.note_layer] = ly
                 self.queue.append(ly)
 
+        # Pointer to another fragment
         if isinstance(msg, AseqFlow_Call):
             call_frag = AseqCall(msg.args[0].value)
             call_frag.parent_section = self._infer_section(frag)

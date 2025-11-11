@@ -6,6 +6,7 @@ from z64lib.core.enums import AseqVersion, AseqSection
 
 #region Base Message
 class AseqMessage:
+    """"""
     opcode: int = 0x00
     opcode_range: range | None = None
     nbits: int | None = None
@@ -27,6 +28,24 @@ class AseqMessage:
     }
 
     def get_arg(self, index: int, default=None, output_type=None):
+        """
+        Retrieves the ASEQ message argument at the specified index.
+
+        Parameters
+        ----------
+        index: int
+            The index of the arg.
+        default
+            The default return value.
+        output_type
+            The output type for the return value (int, hex, bin, oct).
+
+        Returns
+        ----------
+        output_type | int
+            The arg's value, or the default return value if the arg
+            can not be retrieved.
+        """
         if 0 <= index < len(self.args):
             v = self.args[index].value
         else:
@@ -55,28 +74,120 @@ class AseqMessage:
 
     @classmethod
     def read_bits(cls, data: bytes, offset: int, nbits: int = 4) -> int:
+        """
+        Reads the opcode of an ASEQ message at the specified offset and returns
+        the bitmasked value.
+
+        Parameters
+        ----------
+
+        """
         if nbits not in cls.bitmasks:
             raise ValueError()
         return data[offset] & cls.bitmasks[nbits]
 
     @classmethod
     def read_u8(cls, data: bytes, offset: int) -> int:
+        """
+        Reads one bytes of binary sequence data at the specified offset,
+        skipping the opcode byte, and returns its integer value (unsigned).
+
+        Parameters
+        ----------
+        data: bytes
+            Binary audio sequence data.
+        offset: int
+            The address where the ASEQ message is.
+
+        Returns
+        ----------
+        int
+            The arg value as an unsigned integer.
+        """
         return struct.unpack_from('>B', data, offset + 1)[0]
 
     @classmethod
     def read_s8(cls, data: bytes, offset: int) -> int:
+        """
+        Reads one bytes of binary sequence data at the specified offset,
+        skipping the opcode byte, and returns its integer value (signed).
+
+        Parameters
+        ----------
+        data: bytes
+            Binary audio sequence data.
+        offset: int
+            The address where the ASEQ message is.
+
+        Returns
+        ----------
+        int
+            The arg value as a signed integer.
+        """
         return struct.unpack_from('>b', data, offset + 1)[0]
 
     @classmethod
     def read_u16(cls, data: bytes, offset: int) -> int:
+        """
+        Reads two bytes of binary sequence data at the specified offset,
+        skipping the opcode byte, and returns its integer value (unsigned).
+
+        Parameters
+        ----------
+        data: bytes
+            Binary audio sequence data.
+        offset: int
+            The address where the ASEQ message is.
+
+        Returns
+        ----------
+        int
+            The arg value as an unsigned integer.
+        """
         return struct.unpack_from('>H', data, offset + 1)[0]
 
     @classmethod
     def read_s16(cls, data: bytes, offset: int) -> int:
+        """
+        Reads two bytes of binary sequence data at the specified offset,
+        skipping the opcode byte, and returns its integer value (signed).
+
+        Parameters
+        ----------
+        data: bytes
+            Binary audio sequence data.
+        offset: int
+            The address where the ASEQ message is.
+
+        Returns
+        ----------
+        int
+            The arg value as a signed integer.
+        """
         return struct.unpack_from('>h', data, offset + 1)[0]
 
     @classmethod
     def read_argvar(cls, data: bytes, offset: int) -> tuple[int, int]:
+        """
+        Reads the bytes for an `ArgVar` ASEQ message type at the specified
+        offset and converts it to an integer value.
+
+        `ArgVar` ASEQ messages are variable sized. There is always at least one
+        byte. However, if the byte is 0x80 (128) or above, then the length of the
+        message is increased by a byte, with the MSB set to at least 0x80.
+
+        Parameters
+        ----------
+        data: bytes
+            Binary audio sequence data.
+        offset: int
+            The address where the ASEQ message is.
+
+        Returns
+        ----------
+        tuple[int, int]
+            A tuple containing the arg value, and the arg size.
+        """
         ret = cls.read_u8(data, offset)
         if ret & 0x80:
             ret = ((ret << 8) & 0x7F00) | cls.read_u8(data, offset + 1)
@@ -85,6 +196,22 @@ class AseqMessage:
 
     @classmethod
     def read_portamento(cls, data: bytes, offset: int) -> tuple[int, ...]:
+        """
+        Reads the bytes for the portamento type ASEQ messages at the specified offset
+        and converts its args to int.
+
+        Parameters
+        ----------
+        data: bytes
+            Binary audio sequence data.
+        offset: int
+            The address where the ASEQ message is.
+
+        Returns
+        ----------
+        tuple[int, ...]
+            A tuple containing the portamento message's arg values and total arg data size.
+        """
         mode = cls.read_u8(data, offset)
         note = cls.read_u8(data, offset + 1)
         is_special = (mode & 0x80) != 0
@@ -104,10 +231,19 @@ class AseqMessage:
 #region Generic Message Types
 class ArgType(Enum):
     u8  = (1, ArgU8)
+    """ An unsigned 8-bit integer. """
+
     s8  = (1, ArgS8)
+    """ A signed 8-bit integer. """
+
     u16 = (2, ArgU16)
+    """ An unsigned 16-bit integer. """
+
     s16 = (2, ArgS16)
+    """ A signed 16-bit integer. """
+
     var = (None, ArgVar)
+    """ A variable-length unsigned integer. """
 
     @property
     def arg_size(self):
@@ -131,6 +267,7 @@ class GenericMessage(AseqMessage):
 
     @classmethod
     def from_bytes(cls, data: bytes, offset: int):
+        """"""
         pos = offset
         values = []
         read_map = {
@@ -141,12 +278,15 @@ class GenericMessage(AseqMessage):
             ArgType.var: cls.read_argvar,
         }
 
+        # Handle argbit types
         arg_bits = None
         if cls.nbits:
             arg_bits = cls.read_bits(data, offset, cls.nbits)
 
+        # Handle u8, s8, u16, s16, and var types
         arg_sizes = []
         for spec in cls.arg_spec:
+            # Special handling for variable-length types
             if spec == ArgType.var:
                 val, size = read_map[spec](data, pos)
                 values.append(val)
@@ -156,7 +296,7 @@ class GenericMessage(AseqMessage):
                 values.append(val)
 
             arg_sizes.append(size)
-            pos += size
+            pos += size # Increase position by arg_size
 
         return cls(*values, arg_bits=arg_bits, arg_sizes=arg_sizes)
 
@@ -175,22 +315,26 @@ class GenericMessage(AseqMessage):
 
 
 class ArgMessage(GenericMessage):
+    """"""
     nbits = None
 
 
 class ArgbitMessage(GenericMessage):
+    """"""
     nbits = 4
 #endregion
 
 
 #region Special Message Types
 class PortamentoMessage(AseqMessage):
+    """"""
     def __init__(self, mode: int, note: int, time: int, size: int):
         self.args = (ArgU8(mode), ArgU8(note), ArgVar(time))
         self.size = size
 
     @classmethod
     def from_bytes(cls, data, offset):
+        """"""
         mode, note, time, size = cls.read_portamento(data, offset)
         return cls(mode, note, time, size)
 
@@ -201,20 +345,24 @@ class PortamentoMessage(AseqMessage):
 
 #region Section Message Types
 class MetaMessage(AseqMessage):
+    """ An ASEQ message available in the audio sequence's metadata. """
     sections = (AseqSection.META,)
 
 
 class ChanMessage(AseqMessage):
+    """ An ASEQ message available in the audio sequence's channels. """
     sections = (AseqSection.CHAN,)
 
 
 class NoteLayerMessage(AseqMessage):
+    """ An ASEQ message available in the audio sequence's note layers. """
     sections = (AseqSection.LAYER,)
 #endregion
 
 
 #region Message Registry
 class AseqMessageSpec:
+    """"""
     # mapping section -> opcode -> list of message classes
     _spec_by_section: dict[AseqSection, dict[int, list[type['AseqMessage']]]]= {
         sec: {} for sec in AseqSection
@@ -222,12 +370,19 @@ class AseqMessageSpec:
 
     @classmethod
     def register(cls, msg: type['AseqMessage']):
+        """"""
         opcodes = []
+
+        # Argbit message types occupy a range of values.
+        # The lower n bits determine the final opcode value,
+        # while the higher bits determine the overall opcode type
+        # similar to MIDI status bytes.
         if msg.opcode_range is not None:
             opcodes = list(msg.opcode_range)
         else:
             opcodes = [msg.opcode]
 
+        # Filter the messages into their respective section dictionary
         for section in msg.sections:
             section_dict = cls._spec_by_section[section]
             for opcode in opcodes:
@@ -235,11 +390,14 @@ class AseqMessageSpec:
 
     @classmethod
     def get_message_class(cls, section: AseqSection, opcode: int, version: AseqVersion, frag=None):
+        """"""
+        # Retrieve the message from the given section with the given opcode
         candidates = cls._spec_by_section.get(section, {}).get(opcode, [])
 
         if not candidates:
             return None
 
+        # Filter the list by version
         candidates = [
             c for c in candidates
             if c.version in (version, AseqVersion.BOTH)
@@ -247,10 +405,14 @@ class AseqMessageSpec:
         if not candidates:
             return None
 
+        # Like MIDI, Zelda64 has different note modes. However,
+        # the note modes in Zelda64 handle the defaults at the
+        # metadata/channel/layer level instead of globally.
         if section == AseqSection.LAYER and opcode < 0xC0:
             if frag is not None and hasattr(frag, "is_legato"):
                 is_legato = frag.is_legato
 
+                # If legato, remove staccato, and vice versa
                 filtered = [
                     c for c in candidates
                     if getattr(c, "is_legato_type", None) == is_legato
