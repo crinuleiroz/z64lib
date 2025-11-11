@@ -45,13 +45,19 @@ class AseqParser:
         while offset < len(self.data):
             opcode = self.data[offset]
             section_type = self._infer_section(frag)
-            msg_cls = AseqMessageSpec.get_message_class(section_type, opcode, self.version)
+            msg_cls = AseqMessageSpec.get_message_class(section_type, opcode, self.version, frag)
 
             if msg_cls is None:
                 offset += 1
                 continue
 
             msg = msg_cls.from_bytes(self.data, offset)
+
+            if isinstance(msg, (AseqChannel_Legato, AseqLayer_Legato,)):
+                frag.is_legato = True
+            elif isinstance(msg, (AseqChannel_Staccato, AseqLayer_Staccato,)):
+                frag.is_legato = False
+
             frag.messages.append(msg)
             offset += msg.size
 
@@ -88,7 +94,7 @@ class AseqParser:
 
         if isinstance(frag, Channel) and isinstance(msg, AseqChannel_LoadLayer):
             if frag.note_layers[msg.note_layer] is None:
-                ly = NoteLayer(msg.args[0].value)
+                ly = NoteLayer(msg.args[0].value, is_legato=frag.is_legato)
                 frag.note_layers[msg.note_layer] = ly
                 self.queue.append(ly)
 

@@ -56,8 +56,9 @@ class AseqDataFragment(AseqFragment):
 class NoteLayer(AseqMessageFragment):
     is_null: bool = False
 
-    def __init__(self, addr: int):
+    def __init__(self, addr: int, is_legato: bool = False):
         super().__init__(addr)
+        self.is_legato = is_legato
 
 
 class Channel(AseqMessageFragment):
@@ -65,6 +66,7 @@ class Channel(AseqMessageFragment):
 
     def __init__(self, index: int, addr: int):
         super().__init__(addr)
+        self.is_legato = False
         self.index = index
         self.note_layers: list[NoteLayer] = [None for _ in range(4)]
 

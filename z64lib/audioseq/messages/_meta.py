@@ -1,269 +1,206 @@
 from z64lib.audioseq.args import *
 from z64lib.audioseq.messages import (
     MetaMessage,
-    NoArgsMessage,
-    ArgU8Message,
-    ArgS8Message,
-    ArgU8ArgU8Message,
-    ArgU8ArgU16Message,
-    ArgS8ArgU16Message,
-    ArgU8ArgS16Message,
-    ArgS8ArgS16Message,
-    ArgU16Message,
-    ArgS16Message,
-    ArgU16ArgU8Message,
-    ArgS16ArgU8Message,
-    ArgVarMessage,
-    PortamentoMessage
+    ArgType,
+    ArgMessage,
+    ArgbitMessage,
 )
 from z64lib.core.enums import AseqVersion
 
 
 #region Non-Argbits
-class AseqMeta_AllocateVoices(MetaMessage, ArgU8Message):
+class AseqMeta_AllocateVoices(MetaMessage, ArgMessage):
     opcode = 0xF1
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_FreeVoices(MetaMessage, NoArgsMessage):
+class AseqMeta_FreeVoices(MetaMessage, ArgMessage):
     opcode = 0xF0
 
 
-class AseqMeta_EF(MetaMessage, ArgS16ArgU8Message):
+class AseqMeta_EF(MetaMessage, ArgMessage):
     opcode = 0xEF
+    arg_spec = [ArgType.s16, ArgType.u8]
 
 
-class AseqMeta_Transpose(MetaMessage, ArgS8Message):
+class AseqMeta_Transpose(MetaMessage, ArgMessage):
     opcode = 0xDF
+    arg_spec = [ArgType.s8]
 
 
-class AseqMeta_TransposeRelative(MetaMessage, ArgS8Message):
+class AseqMeta_TransposeRelative(MetaMessage, ArgMessage):
     opcode = 0xDE
+    arg_spec = [ArgType.s8]
 
 
-class AseqMeta_Tempo(MetaMessage, ArgU8Message):
+class AseqMeta_Tempo(MetaMessage, ArgMessage):
     opcode = 0xDD
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_TempoChange(MetaMessage, ArgS8Message):
+class AseqMeta_TempoChange(MetaMessage, ArgMessage):
     opcode = 0xDC
+    arg_spec = [ArgType.s8]
 
 
-class AseqMeta_MasterVolume(MetaMessage, ArgU8Message):
+class AseqMeta_MasterVolume(MetaMessage, ArgMessage):
     opcode = 0xDB
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_VolumeMode(MetaMessage, ArgU8ArgS16Message):
+class AseqMeta_VolumeMode(MetaMessage, ArgMessage):
     opcode = 0xDA
+    arg_spec = [ArgType.u8, ArgType.s16]
 
 
-class AseqMeta_MasterExpression(MetaMessage, ArgU8Message):
+class AseqMeta_MasterExpression(MetaMessage, ArgMessage):
     opcode = 0xD9
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_InitChannels(MetaMessage, ArgU16Message):
+class AseqMeta_InitChannels(MetaMessage, ArgMessage):
     opcode = 0xD7
+    arg_spec = [ArgType.u16]
 
 
-class AseqMeta_FreeChannels(MetaMessage, ArgU16Message):
+class AseqMeta_FreeChannels(MetaMessage, ArgMessage):
     opcode = 0xD6
+    arg_spec = [ArgType.u16]
 
 
-class AseqMeta_MuteScale(MetaMessage, ArgS8Message):
+class AseqMeta_MuteScale(MetaMessage, ArgMessage):
     opcode = 0xD5
+    arg_spec = [ArgType.s8]
 
 
-class AseqMeta_Mute(MetaMessage, NoArgsMessage):
+class AseqMeta_Mute(MetaMessage, ArgMessage):
     opcode = 0xD4
 
 
-class AseqMeta_MuteBehavior(MetaMessage, ArgU8Message):
+class AseqMeta_MuteBehavior(MetaMessage, ArgMessage):
     opcode = 0xD3
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_LoadShortVelArray(MetaMessage, ArgU16Message):
+class AseqMeta_LoadShortVelArray(MetaMessage, ArgMessage):
     opcode = 0xD2
+    arg_spec = [ArgType.u16]
 
 
-class AseqMeta_LoadShortGateArray(MetaMessage, ArgU16Message):
+class AseqMeta_LoadShortGateArray(MetaMessage, ArgMessage):
     opcode = 0xD1
+    arg_spec = [ArgType.u16]
 
 
-class AseqMeta_VoicePolicy(MetaMessage, ArgU8Message):
+class AseqMeta_VoicePolicy(MetaMessage, ArgMessage):
     opcode = 0xD0
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_Random(MetaMessage, ArgU8Message):
+class AseqMeta_Random(MetaMessage, ArgMessage):
     opcode = 0xCE
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_DynCall(MetaMessage, ArgU16Message):
+class AseqMeta_DynCall(MetaMessage, ArgMessage):
     opcode = 0xCD
+    arg_spec = [ArgType.u16]
 
 
-class AseqMeta_LoadImmediate(MetaMessage, ArgU8Message):
+class AseqMeta_LoadImmediate(MetaMessage, ArgMessage):
     opcode = 0xCC
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_BitwiseAnd(MetaMessage, ArgU8Message):
+class AseqMeta_BitwiseAnd(MetaMessage, ArgMessage):
     opcode = 0xC9
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_Subtract(MetaMessage, ArgU8Message):
+class AseqMeta_Subtract(MetaMessage, ArgMessage):
     opcode = 0xC8
+    arg_spec = [ArgType.u8]
 
 
-class AseqMeta_WriteSequenceScript(MetaMessage, ArgU8ArgU16Message):
+class AseqMeta_WriteSequenceScript(MetaMessage, ArgMessage):
     opcode = 0xC7
+    arg_spec = [ArgType.s8, ArgType.u16]
 
 
-class AseqMeta_Stop(MetaMessage, NoArgsMessage):
+class AseqMeta_Stop(MetaMessage, ArgMessage):
     opcode = 0xC6
 
 
-class AseqMeta_ScriptCounter(MetaMessage, ArgU16Message):
+class AseqMeta_ScriptCounter(MetaMessage, ArgMessage):
     opcode = 0xC5
+    arg_spec = [ArgType.u16]
 
 
-class AseqMeta_RunSequence(MetaMessage, ArgU8ArgU8Message):
+class AseqMeta_RunSequence(MetaMessage, ArgMessage):
     opcode = 0xC4
+    arg_spec = [ArgType.u8, ArgType.u8]
 
 
-class AseqMeta_MuteChannel(MetaMessage, ArgU16Message):
+class AseqMeta_MuteChannel(MetaMessage, ArgMessage):
     opcode = 0xC3
+    arg_spec = [ArgType.u16]
     version = AseqVersion.MM
 #endregion
 
 
 #region Argbits
-class AseqMeta_TestChannel(MetaMessage):
+class AseqMeta_TestChannel(MetaMessage, ArgbitMessage):
     opcode_range = range(0x00, 0x10)
-
-    def __init__(self, ch: int):
-        self.channel = ch
-
-    @classmethod
-    def from_bytes(cls, data: bytes, offset: int):
-        ch = cls.read_bits(data, offset, 4)
-        return cls(ch)
+    nbits = 4
 
 
-class AseqMeta_StopChannel(MetaMessage):
+class AseqMeta_StopChannel(MetaMessage, ArgbitMessage):
     opcode_range = range(0x40, 0x50)
-
-    def __init__(self, ch: int):
-        self.channel = ch
-
-    @classmethod
-    def from_bytes(cls, data: bytes, offset: int):
-        ch = cls.read_bits(data, offset, 4)
-        return cls(ch)
+    nbits = 4
 
 
-class AseqMeta_SubIO(MetaMessage):
+class AseqMeta_SubIO(MetaMessage, ArgbitMessage):
     opcode_range = range(0x50, 0x58)
-
-    def __init__(self, io: int):
-        self.io_port = io
-
-    @classmethod
-    def from_bytes(cls, data: bytes, offset: int):
-        io = cls.read_bits(data, offset, 3)
-        return cls(io)
+    nbits = 3
 
 
-class AseqMeta_LoadResource(MetaMessage):
+class AseqMeta_LoadResource(MetaMessage, ArgbitMessage):
     opcode_range = range(0x60, 0x70)
-    size = 3
-
-    def __init__(self, ch: int, arg_u8_1: int, arg_u8_2: int):
-        self.channel = ch
-        self.args = (ArgU8(arg_u8_1), ArgU8(arg_u8_2))
-
-    @classmethod
-    def from_bytes(cls, data: bytes, offset: int):
-        ch = cls.read_bits(data, offset, 4)
-        arg_u8_1 = cls.read_u8(data, offset)
-        arg_u8_2 = cls.read_u8(data, offset + 1)
-        return cls(ch, arg_u8_1, arg_u8_2)
+    nbits = 4
+    arg_spec = [ArgType.u8, ArgType.u8]
 
 
-class AseqMeta_StoreIO(MetaMessage):
+class AseqMeta_StoreIO(MetaMessage, ArgbitMessage):
     opcode_range = range(0x70, 0x78)
-
-    def __init__(self, io: int):
-        self.io_port = io
-
-    @classmethod
-    def from_bytes(cls, data: bytes, offset: int):
-        io = cls.read_bits(data, offset, 3)
-        return cls(io)
+    nbits = 3
 
 
-class AseqMeta_LoadIO(MetaMessage):
+class AseqMeta_LoadIO(MetaMessage, ArgbitMessage):
     opcode_range = range(0x80, 0x88)
-
-    def __init__(self, io: int):
-        self.io_port = io
-
-    @classmethod
-    def from_bytes(cls, data: bytes, offset: int):
-        io = cls.read_bits(data, offset, 3)
-        return cls(io)
+    nbits = 3
 
 
-class AseqMeta_LoadChannel(MetaMessage):
+class AseqMeta_LoadChannel(MetaMessage, ArgbitMessage):
     opcode_range = range(0x90, 0xA0)
-    size = 3
+    nbits = 4
+    arg_spec = [ArgType.u16]
     is_pointer = True
 
-    def __init__(self, ch: int, arg_u16: int):
-        self.channel = ch
-        self.args = (ArgU16(arg_u16),)
-
-    @classmethod
-    def from_bytes(cls, data: bytes, offset: int):
-        ch = cls.read_bits(data, offset, 4)
-        arg_u16 = cls.read_u16(data, offset)
-        return cls(ch, arg_u16)
-
-    def __repr__(self):
-        cls_name = self.__class__.__name__
-        return f'{cls_name}(ch={self.channel + 1}, arg_u16=0x{self.args[0].value:X})'
+    @property
+    def channel(self):
+        return self.arg_bits
 
 
-class AseqMeta_LoadChannelRelative(MetaMessage):
+class AseqMeta_LoadChannelRelative(MetaMessage, ArgbitMessage):
     opcode_range = range(0xA0, 0xB0)
-    size = 3
+    nbits = 4
+    arg_spec = [ArgType.s16]
     is_pointer = True
 
-    def __init__(self, ch: int, arg_s16: int):
-        self.channel = ch
-        self.args = (ArgS16(arg_s16),)
 
-    @classmethod
-    def from_bytes(cls, data: bytes, offset: int):
-        ch = cls.read_bits(data, offset, 4)
-        arg_s16 = cls.read_s16(data, offset)
-        return cls(ch, arg_s16)
-
-    def __repr__(self):
-        cls_name = self.__class__.__name__
-        return f'{cls_name}(ch={self.channel + 1}, arg_s16=0x{self.args[0].value:X})'
-
-
-class AseqMeta_LoadSequence(MetaMessage):
+class AseqMeta_LoadSequence(MetaMessage, ArgbitMessage):
     opcode_range = range(0xB0, 0xC0)
-    size = 4
+    nbits = 4
+    arg_spec = [ArgType.u8, ArgType.u16]
     is_pointer = True
-
-    def __init__(self, ch: int, arg_u8: int, arg_u16: int):
-        self.channel = ch
-        self.args = (ArgU8(arg_u8), ArgU16(arg_u16))
-
-    @classmethod
-    def from_bytes(cls, data: bytes, offset: int):
-        ch = cls.read_bits(data, offset, 4)
-        arg_u8 = cls.read_u8(data, offset)
-        arg_u16 = cls.read_u16(data, offset + 1)
-        return cls(ch, arg_u8, arg_u16)
 #endregion

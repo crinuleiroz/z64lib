@@ -26,6 +26,7 @@ from z64lib.audiobank.bank import InstrumentBank
 from z64lib.audioseq import AseqParser
 from z64lib.core.enums import AseqVersion
 
+
 # Base directory of this script
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -34,6 +35,9 @@ TABLE_ENTRY: Path = BASE_DIR / "bin" / "3.bankmeta"
 BANK_DATA: Path =  BASE_DIR / "bin" / "3.zbank"
 AUDIO_SEQUENCE: Path = BASE_DIR / "bin" / "mm-battle.seq"
 
+# =========== #
+#  TEST DATA  #
+# =========== #
 
 # Audiobank Testing
 if TEST_BANK:
@@ -87,8 +91,14 @@ if TEST_ASEQ:
     seq_ch_13 = seq_meta.get_channel(13)
     seq_ch_15 = seq_meta.get_channel(15)
 
-    print(seq_meta)
+    for msg in seq_meta.messages:
+        print(msg)
+    # for msg in seq_ch_0.get_layer(0).messages:
+    #     print(msg)
 
+# ============== #
+#  TEST CLEANUP  #
+# ============== #
 
 # Cache cleanup
 if CLEAN_PYCACHE_FOLDERS:
