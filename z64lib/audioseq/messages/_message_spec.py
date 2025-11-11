@@ -80,7 +80,17 @@ class AseqMessage:
 
         Parameters
         ----------
+        data: bytes
+            Binary audio sequence data.
+        offset: int
+            The address of the ASEQ message.
+        nbits: int
+            The total number of bits the arg embedded in the opcode takes.
 
+        Returns
+        ----------
+        int
+            The value of the arg embedded in the opcode.
         """
         if nbits not in cls.bitmasks:
             raise ValueError()
@@ -97,7 +107,7 @@ class AseqMessage:
         data: bytes
             Binary audio sequence data.
         offset: int
-            The address where the ASEQ message is.
+            The address of the ASEQ message.
 
         Returns
         ----------
@@ -117,7 +127,7 @@ class AseqMessage:
         data: bytes
             Binary audio sequence data.
         offset: int
-            The address where the ASEQ message is.
+            The address of the ASEQ message.
 
         Returns
         ----------
@@ -137,7 +147,7 @@ class AseqMessage:
         data: bytes
             Binary audio sequence data.
         offset: int
-            The address where the ASEQ message is.
+            The address of the ASEQ message.
 
         Returns
         ----------
@@ -157,7 +167,7 @@ class AseqMessage:
         data: bytes
             Binary audio sequence data.
         offset: int
-            The address where the ASEQ message is.
+            The address of the ASEQ message.
 
         Returns
         ----------
@@ -181,7 +191,7 @@ class AseqMessage:
         data: bytes
             Binary audio sequence data.
         offset: int
-            The address where the ASEQ message is.
+            The address of the ASEQ message.
 
         Returns
         ----------
@@ -205,7 +215,7 @@ class AseqMessage:
         data: bytes
             Binary audio sequence data.
         offset: int
-            The address where the ASEQ message is.
+            The address of the ASEQ message.
 
         Returns
         ----------
