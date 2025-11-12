@@ -6,7 +6,7 @@ A ctypes-like system for defining and parsing Zelda64 binary structs.
 """
 from .base import DataType
 from .primitives import (
-    u8, s8, u16, s16, u32, s32, f32
+    u8, s8, u16, s16, u32, s32, u64, s64, f32
 )
 from .references import (
     pointer
@@ -26,6 +26,8 @@ __all__ = [
     "s16",
     "u32",
     "s32",
+    "u64",
+    "s64",
     "f32",
     # References
     "pointer",
