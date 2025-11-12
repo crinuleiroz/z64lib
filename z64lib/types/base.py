@@ -1,23 +1,42 @@
 import inspect
+import struct
 
 
 class DataType:
     """ Base class all struct types inherit their properties from. """
-    signed: bool
+    format: str = None
+    signed: bool = False
+    BITS: int = None
 
     @classmethod
     def size(cls) -> int:
         """ Returns the size of the data type in bytes. """
-        raise NotImplementedError
+        if cls.BITS is None:
+            raise NotImplementedError
+        return cls.BITS // 8
 
     @classmethod
     def from_bytes(cls, buffer: bytes, offset: int):
         """"""
-        raise NotImplementedError
+        if cls.format is None:
+            raise NotImplementedError
+        ret = struct.unpack_from(cls.format, buffer, offset)[0]
+        return cls(ret)
 
-    def to_bytes(self, value) -> bytes:
+    @classmethod
+    def to_bytes(cls, value) -> bytes:
         """"""
-        raise NotImplementedError
+        if cls.format is None:
+            raise NotImplementedError
+        return struct.pack(cls.format, int(value))
+
+    @classmethod
+    def _wrap(cls, value: int) -> int:
+        """ Wrap the value to fit the bit width of the given data type. """
+        bitmask = value & (1 << cls.BITS) - 1
+        if cls.signed and bitmask >= (1 << (cls.BITS - 1)):
+            bitmask -= (1 << cls.BITS)
+        return bitmask
 
     #region Alignment Helpers
     @staticmethod

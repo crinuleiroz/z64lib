@@ -7,14 +7,17 @@ from helpers import open_read
 #  TEST OPTIONS  #
 # ============== #
 
+# Types
+TEST_TYPES: bool = True
+
 # Instrument Bank
 TEST_BANK: bool = False
 BANK_TEST_TARGET: str = "instrument" # or "drum" / "effect"
 PRINT_BANK_TEST_TARGET: bool = True
-WRITE_BANK: bool = True
+WRITE_BANK: bool = False
 
 # Audio Sequence
-TEST_ASEQ: bool = True
+TEST_ASEQ: bool = False
 
 # Cleanup
 CLEAN_PYCACHE_FOLDERS: bool = True
@@ -22,6 +25,7 @@ CLEAN_PYCACHE_FOLDERS: bool = True
 
 # Ensure import works
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+from z64lib.types import *
 from z64lib.audiobank.bank import InstrumentBank
 from z64lib.audioseq import AseqParser
 from z64lib.core.enums import AseqVersion
@@ -38,6 +42,10 @@ AUDIO_SEQUENCE: Path = BASE_DIR / "bin" / "mm-battle.seq"
 # =========== #
 #  TEST DATA  #
 # =========== #
+
+# Type testing
+if TEST_TYPES:
+    print(f'value={s16(0xFFFF)}', f'min={s16.MIN}', f'max={s16.MAX}')
 
 # Audiobank Testing
 if TEST_BANK:
