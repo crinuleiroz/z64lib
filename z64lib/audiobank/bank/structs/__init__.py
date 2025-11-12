@@ -4,7 +4,7 @@ z64lib.audio.audiobank.banks.structs
 """
 
 # Order matters, import non-dependents first, then dependents
-from ._envelope_struct import Envelope, EnvelopePoint
+from ._envelope_struct import Envelope
 from ._vadpcm_book_struct import VadpcmBook, VadpcmBookHeader
 from ._vadpcm_loop_struct import VadpcmLoop, VadpcmLoopHeader
 from ._sample_struct import Sample, SampleFlags
@@ -14,7 +14,6 @@ from ._drum_struct import Drum
 
 
 __all__ = [
-    "EnvelopePoint",
     "Envelope",
     "VadpcmBookHeader",
     "VadpcmBook",
