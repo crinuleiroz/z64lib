@@ -36,7 +36,9 @@ classifiers = [
     "Programming Language :: Python :: 3.15",
 ]
 
-dependencies = []
+dependencies = [
+    "pyyaml >= 6.0"
+]
 
 keywords = [
     "python",
@@ -53,7 +55,9 @@ issues = "https://github.com/crinuleiroz/z64lib/issues"
 [tool.setuptools]
 packages = [
     "z64lib",
-    "z64lib.audio",
+    "z64lib.audiobank",
+    "z64lib.audioseq",
+    "z64lib.audiotable",
     "z64lib.core",
 ]
 include-package-data = true
