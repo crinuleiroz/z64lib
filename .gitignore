@@ -218,5 +218,8 @@ __marimo__/
 
 # Testing / binary data
 tests/bin/
+tests/music/
 *.zbank
 *.bankmeta
+*.ootrs
+*.mmrs
