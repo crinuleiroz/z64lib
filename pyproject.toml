@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 # Project information
 [project]
 name = "z64lib"
-description= "A Python library for parsing and manipulating binary data from Zelda64 (Ocarina of Time and Majora's Mask) ROMs."
+description= "A Python library for Zelda64 (Ocarina of Time and Majora's Mask)."
 version = "0.0.0.0a1"
 license = "GPL-3.0-or-later"
 license-files = [ "LICENSE" ]
@@ -36,9 +36,10 @@ classifiers = [
     "Programming Language :: Python :: 3.15",
 ]
 
-dependencies = [
-    "pyyaml >= 6.0"
-]
+dependencies = []
+
+[project.optional-dependencies]
+randomizers = ["pyyaml>=6.0"]
 
 keywords = [
     "python",
@@ -59,6 +60,8 @@ packages = [
     "z64lib.audioseq",
     "z64lib.audiotable",
     "z64lib.core",
+    "z64lib.extras",
+    "z64lib.extras.randomizers",
 ]
 include-package-data = true
 

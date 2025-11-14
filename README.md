@@ -3,7 +3,7 @@
 <p>
   <a id="readme-top"></a>
   <p align="center">
-    A Python library for parsing and manipulating binary data from Zelda64 ROMs.
+    A Python library for Zelda64 (Ocarina of Time and Majora's Mask).
   </p>
 </p>
 
