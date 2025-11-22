@@ -28,7 +28,14 @@ class DataType:
         """"""
         if cls.format is None:
             raise NotImplementedError
-        return struct.pack(cls.format, int(value))
+
+        if issubclass(cls, int):
+            return struct.pack(cls.format, int(value))
+
+        if issubclass(cls, float):
+            return struct.pack(cls.format, float(value))
+
+        raise TypeError(f"Cannot convert value of type {type(value)} for {cls.__name__} to bytes.")
 
     @classmethod
     def _wrap(cls, value: int) -> int:

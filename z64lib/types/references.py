@@ -19,7 +19,7 @@ class pointer(DataType):
         elif isinstance(pointer_depth, int):
             self.pointer_depth = pointer_depth
         else:
-            raise TypeError("pointer_depth must be str or int.")
+            raise TypeError()
 
     def from_bytes(self, buffer: bytes, offset: int):
         """
@@ -50,9 +50,9 @@ class pointer(DataType):
         # another pointer, then go another level deeper to find the source data.
         try:
             if self.pointer_depth == 1:
-                self._resolve_pointer(buffer, addr)
+                return self._resolve_pointer(buffer, addr)
             else:
-                self._resolve_pointer_to_pointer(buffer, addr)
+                return self._resolve_pointer_to_pointer(buffer, addr)
         except Exception as e:
             print(f"warning: failed to parse {self.struct_type.__name__} at 0x{addr:X}: {e}")
             return None

@@ -1,3 +1,4 @@
+from copy import deepcopy
 import hashlib
 import inspect
 import struct
@@ -36,27 +37,6 @@ class array(DataType):
 
     def size(self):
         return self.data_type.size() * self.length
-
-    # def _resolve_length(self, parent=None):
-    #     if isinstance(self.length, int):
-    #         return self.length
-    #     elif isinstance(self.length, str):
-    #         if parent is None:
-    #             raise ValueError("Parent is required to resolve dynamic array length.")
-    #         return getattr(parent, self.length)
-    #     else:
-    #         raise TypeError("Array length must be int or str")
-
-    # def from_bytes(self, buffer: bytes, offset: int, parent=None):
-    #     count = self._resolve_length(parent)
-    #     self.items = []
-
-    #     for i in range(count):
-    #         item_offset = offset + i * self.data_type.size()
-    #         item = self.data_type.from_bytes(buffer, item_offset)
-    #         self.items.append(item)
-
-    #     return self
 
     def from_bytes(self, buffer: bytes, offset: int):
         self.items = []

@@ -102,12 +102,14 @@ class AseqParser:
 
     def _handle_message_reference(self, frag: AseqMessageFragment, msg: AseqMessage):
         """"""
+        # Pointer from metadata to a channel
         if isinstance(frag, AseqMetadata) and isinstance(msg, AseqMeta_LoadChannel):
             if frag.channels[msg.channel] is None:
                 ch = Channel(msg.channel, msg.args[0].value)
                 frag.channels[msg.channel] = ch
                 self.queue.append(ch)
 
+        # Pointer from channel to a note layer
         if isinstance(frag, Channel) and isinstance(msg, AseqChannel_LoadLayer):
             if frag.note_layers[msg.note_layer] is None:
                 ly = NoteLayer(msg.args[0].value, is_legato=frag.is_legato)
