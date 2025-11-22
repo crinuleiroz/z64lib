@@ -11,6 +11,7 @@ from ._sample_struct import Sample, SampleFlags
 from ._tuned_sample_struct import TunedSample
 from ._instrument_struct import Instrument
 from ._drum_struct import Drum
+from ._sound_effect_struct import SoundEffect
 
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "TunedSample",
     "Instrument",
     "Drum",
+    "SoundEffect",
 ]

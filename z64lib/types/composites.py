@@ -37,6 +37,27 @@ class array(DataType):
     def size(self):
         return self.data_type.size() * self.length
 
+    # def _resolve_length(self, parent=None):
+    #     if isinstance(self.length, int):
+    #         return self.length
+    #     elif isinstance(self.length, str):
+    #         if parent is None:
+    #             raise ValueError("Parent is required to resolve dynamic array length.")
+    #         return getattr(parent, self.length)
+    #     else:
+    #         raise TypeError("Array length must be int or str")
+
+    # def from_bytes(self, buffer: bytes, offset: int, parent=None):
+    #     count = self._resolve_length(parent)
+    #     self.items = []
+
+    #     for i in range(count):
+    #         item_offset = offset + i * self.data_type.size()
+    #         item = self.data_type.from_bytes(buffer, item_offset)
+    #         self.items.append(item)
+
+    #     return self
+
     def from_bytes(self, buffer: bytes, offset: int):
         self.items = []
 
@@ -282,20 +303,6 @@ class Z64Struct(DataType):
 
         value = data_type.from_bytes(buffer, offset)
         size = data_type.size()
-
-        # if inspect.isclass(data_type) and issubclass(data_type, Z64Struct):
-        #     value = data_type.from_bytes(buffer, field_offset)
-        #     size = data_type.size()
-
-        # # Pointer
-        # elif isinstance(data_type, pointer):
-        #     value = data_type.from_bytes(buffer, field_offset)
-        #     size = data_type.size()
-
-        # # Primitive
-        # else:
-        #     value = data_type.from_bytes(buffer, field_offset)
-        #     size = data_type.size()
 
         return value, size
 

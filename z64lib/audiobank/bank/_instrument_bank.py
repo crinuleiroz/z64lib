@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from z64lib.audiobank import AudiobankIndexEntry
 from z64lib.audiobank.bank.structs import Drum
 from z64lib.audiobank.bank.structs import Instrument
-from z64lib.audiobank.bank.structs import TunedSample
+from z64lib.audiobank.bank.structs import SoundEffect
 from z64lib.core.allocation import MemoryAllocator
 
 
@@ -24,14 +24,14 @@ class InstrumentBank:
         The instruments contained in the instrument bank.
     drums: list[Drum | None]
         The drums contained in the instrument bank.
-    effects: list[TunedSample | None]
+    effects: list[SoundEffect | None]
         The sound effects contained in the instrument bank.
     """
     def __init__(self):
         self.index_entry: AudiobankIndexEntry = None
         self.instruments: list[Instrument | None] = []
         self.drums: list[Drum | None] = []
-        self.effects: list[TunedSample | None] = []
+        self.effects: list[SoundEffect | None] = []
 
         self.drum_list_addr: int = 0
         self.effect_list_addr: int = 0
@@ -98,7 +98,7 @@ class InstrumentBank:
             addr = obj.effect_list_addr + (8 * i)
             effect = bank_data[addr:addr + 0x08]
             if effect != (b'\x00' * 8):
-                obj.effects.append(TunedSample.from_bytes(bank_data, addr))
+                obj.effects.append(SoundEffect.from_bytes(bank_data, addr))
             else:
                 obj.effects.append(None) # Preserve null
 
@@ -251,9 +251,9 @@ class InstrumentBank:
         if effect is None:
             return
 
-        self._add_to_registry(effect, effect.get_hash(), self._effect_registry)
-        if effect.sample:
-            self._register_sample_data(effect.sample)
+        self._add_to_registry(effect, effect.tuned_sample.get_hash(), self._effect_registry)
+        if effect.tuned_sample.sample:
+            self._register_sample_data(effect.tuned_sample.sample)
 
     def _reassign_registry_refs(self):
         # Update sample references
