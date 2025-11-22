@@ -135,6 +135,10 @@ class AseqLayer_NoteDVG(NoteLayerMessage, ArgbitMessage):
     def gate(self):
         return self.args[2].value
 
+    @property
+    def midi_note(self):
+        return self.arg_bits + 21
+
 
 class AseqLayer_NoteDV(NoteLayerMessage, ArgbitMessage):
     is_legato_type = True
@@ -153,6 +157,10 @@ class AseqLayer_NoteDV(NoteLayerMessage, ArgbitMessage):
     @property
     def velocity(self):
         return self.args[1].value
+
+    @property
+    def midi_note(self):
+        return self.arg_bits + 21
 
 
 class AseqLayer_NoteVG(NoteLayerMessage, ArgbitMessage):
@@ -173,6 +181,10 @@ class AseqLayer_NoteVG(NoteLayerMessage, ArgbitMessage):
     def gate(self):
         return self.args[1].value
 
+    @property
+    def midi_note(self):
+        return self.arg_bits + 21
+
 
 # Staccato
 class AseqLayer_ShortDVG(NoteLayerMessage, ArgbitMessage):
@@ -189,6 +201,10 @@ class AseqLayer_ShortDVG(NoteLayerMessage, ArgbitMessage):
     def delay(self):
         return self.args[0].value
 
+    @property
+    def midi_note(self):
+        return self.arg_bits + 21
+
 
 class AseqLayer_ShortDV(NoteLayerMessage, ArgbitMessage):
     is_legato_type = False
@@ -200,6 +216,10 @@ class AseqLayer_ShortDV(NoteLayerMessage, ArgbitMessage):
     def note(self):
         return self.arg_bits
 
+    @property
+    def midi_note(self):
+        return self.arg_bits + 21
+
 
 class AseqLayer_ShortVG(NoteLayerMessage, ArgbitMessage):
     is_legato_type = False
@@ -210,4 +230,8 @@ class AseqLayer_ShortVG(NoteLayerMessage, ArgbitMessage):
     @property
     def note(self):
         return self.arg_bits
+
+    @property
+    def midi_note(self):
+        return self.arg_bits + 21
 #endregion
