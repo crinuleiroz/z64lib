@@ -46,6 +46,8 @@ class pointer(DataType):
         if addr == 0 or addr >= len(buffer):
             return None
 
+        # Begin resolving pointer to instantiate an object. If the pointer points to
+        # another pointer, then go another level deeper to find the source data.
         try:
             if self.pointer_type == 1:
                 self._resolve_pointer(buffer, addr)
@@ -66,7 +68,9 @@ class pointer(DataType):
         return struct.pack('>I', addr)
 
     def _resolve_pointer(self, buffer, addr):
-        return self.struct_type.from_bytes(buffer, addr)
+        obj = self.struct_type.from_bytes(buffer, addr)
+        obj._original_address = addr # Store the original address just in case
+        return obj
 
     def _resolve_pointer_to_pointer(self, buffer, addr):
         next_pointer = pointer(self.struct_type, self.pointer_type - 1)
