@@ -1,4 +1,4 @@
-from z64lib.audiobank.bank.structs import TunedSample
+from z64lib.audiobank.structs import TunedSample
 from z64lib.types import *
 
 class SoundEffect(Z64Struct):

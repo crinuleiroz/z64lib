@@ -1,9 +1,9 @@
 import struct
 from dataclasses import dataclass
 from z64lib.audiobank import AudiobankIndexEntry
-from z64lib.audiobank.bank.structs import Drum
-from z64lib.audiobank.bank.structs import Instrument
-from z64lib.audiobank.bank.structs import SoundEffect
+from z64lib.audiobank.structs import Drum
+from z64lib.audiobank.structs import Instrument
+from z64lib.audiobank.structs import SoundEffect
 from z64lib.core.allocation import MemoryAllocator
 
 

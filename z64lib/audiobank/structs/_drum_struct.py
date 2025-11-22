@@ -1,5 +1,5 @@
-from z64lib.audiobank.bank.structs import Envelope
-from z64lib.audiobank.bank.structs import TunedSample
+from z64lib.audiobank.structs import Envelope
+from z64lib.audiobank.structs import TunedSample
 from z64lib.types import *
 
 

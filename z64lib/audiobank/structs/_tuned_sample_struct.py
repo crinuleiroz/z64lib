@@ -1,4 +1,4 @@
-from z64lib.audiobank.bank.structs import Sample
+from z64lib.audiobank.structs import Sample
 from z64lib.types import *
 
 

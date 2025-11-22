@@ -3,33 +3,30 @@ import shutil
 from pathlib import Path
 from helpers import open_read
 
+# Ensure import works
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 # ============== #
 #  TEST OPTIONS  #
 # ============== #
 
 # Types
-TEST_TYPES: bool = True
+TEST_TYPES: bool = False
 
 # Instrument Bank
 TEST_BANK: bool = False
-BANK_TEST_TARGET: str = "instrument" # or "drum" / "effect"
+BANK_TEST_TARGET: str = "instrument" # "instrument" / "drum" / "effect"
 PRINT_BANK_TEST_TARGET: bool = True
 WRITE_BANK: bool = False
 
 # Audio Sequence
-TEST_ASEQ: bool = False
+TEST_ASEQ: bool = True
+
+# Extras
+TEST_EXTRAS: bool = False
 
 # Cleanup
 CLEAN_PYCACHE_FOLDERS: bool = True
-
-
-# Ensure import works
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-from z64lib.types import *
-from z64lib.audiobank.bank import InstrumentBank
-from z64lib.audioseq import AseqParser
-from z64lib.core.enums import AseqVersion
-
 
 # Base directory of this script
 BASE_DIR = Path(__file__).resolve().parent
@@ -38,6 +35,9 @@ BASE_DIR = Path(__file__).resolve().parent
 TABLE_ENTRY: Path = BASE_DIR / "bin" / "3.bankmeta"
 BANK_DATA: Path =  BASE_DIR / "bin" / "3.zbank"
 AUDIO_SEQUENCE: Path = BASE_DIR / "bin" / "mm-battle.seq"
+MUSIC_METADATA_FILE: Path = BASE_DIR / "music" / "test_metadata.mmrs"
+OOTRS_FILE: Path = BASE_DIR / "music" / "test_ootrs.ootrs"
+MMRS_FILE: Path = BASE_DIR / "music" / "test_mmrs.mmrs"
 
 # =========== #
 #  TEST DATA  #
@@ -45,10 +45,14 @@ AUDIO_SEQUENCE: Path = BASE_DIR / "bin" / "mm-battle.seq"
 
 # Type testing
 if TEST_TYPES:
+    from z64lib.types import *
+
     print(f'value={s16(0xFFFF)}', f'min={s16.MIN}', f'max={s16.MAX}')
 
 # Audiobank Testing
 if TEST_BANK:
+    from z64lib.audiobank import InstrumentBank
+
     entry_data = open_read(TABLE_ENTRY, mode='rb')
     bank_data = open_read(BANK_DATA, mode='rb')
 
@@ -83,6 +87,10 @@ if TEST_BANK:
 
 # Audioseq Testing
 if TEST_ASEQ:
+    from z64lib.audioseq import AseqParser
+    from z64lib.core.enums import AseqVersion
+    from z64lib.audioseq.messages import AseqLayer_NoteDVG, AseqLayer_NoteDV, AseqLayer_NoteVG
+
     aseq_data = open_read(AUDIO_SEQUENCE, mode='rb')
     parser = AseqParser(aseq_data, AseqVersion.OOT)
     seq = parser.parse()
@@ -99,10 +107,34 @@ if TEST_ASEQ:
     seq_ch_13 = seq_meta.get_channel(13)
     seq_ch_15 = seq_meta.get_channel(15)
 
-    for msg in seq_meta.messages:
-        print(msg)
-    # for msg in seq_ch_0.get_layer(0).messages:
+    # for msg in seq_meta.messages:
     #     print(msg)
+    for msg in seq_ch_0.get_layer(0).messages:
+        if isinstance(msg, AseqLayer_NoteDVG):
+            print(msg.midi_note)
+        elif isinstance(msg, AseqLayer_NoteDV):
+            print(msg.midi_note)
+        elif isinstance(msg, AseqLayer_NoteVG):
+            print(msg.midi_note)
+        else:
+            print(msg)
+
+
+# Extras testing
+if TEST_EXTRAS:
+    from z64lib.extras.randomizers.music import MusicFile
+
+    # Music file with .metadata
+    # mf_metadata = MusicFile.from_zip(MUSIC_METADATA_FILE)
+    # print(mf_metadata.metadata)
+
+    # OOTRS file with .meta
+    mf_ootrs = MusicFile.from_zip(OOTRS_FILE)
+    print(mf_ootrs.metadata)
+
+    # MMRS file with categories.txt
+    # mf_mmrs = MusicFile.from_zip(MMRS_FILE)
+    # print(mf_mmrs.metadata)
 
 # ============== #
 #  TEST CLEANUP  #
