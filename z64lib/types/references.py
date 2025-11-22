@@ -4,22 +4,22 @@ from z64lib.types import DataType
 
 class pointer(DataType):
     """ An unsigned 32-bit integer that indicates an offset to a new structure in the binary data. """
-    _LEVEL_MAP = {
+    _DEPTH_MAP = {
         "single": 1,
         "double": 2,
     }
 
-    def __init__(self, struct_type, pointer_type: str | int = "single"):
+    def __init__(self, struct_type, pointer_depth: str | int = "single"):
         self.struct_type = struct_type
 
-        if isinstance(pointer_type, str):
-            if pointer_type.lower() not in self._LEVEL_MAP:
+        if isinstance(pointer_depth, str):
+            if pointer_depth.lower() not in self._DEPTH_MAP:
                 raise ValueError()
-            self.pointer_type = self._LEVEL_MAP[pointer_type.lower()]
-        elif isinstance(pointer_type, int):
-            self.pointer_type = pointer_type
+            self.pointer_depth = self._DEPTH_MAP[pointer_depth.lower()]
+        elif isinstance(pointer_depth, int):
+            self.pointer_depth = pointer_depth
         else:
-            raise TypeError("pointer_type must be str or int.")
+            raise TypeError("pointer_depth must be str or int.")
 
     def from_bytes(self, buffer: bytes, offset: int):
         """
@@ -49,7 +49,7 @@ class pointer(DataType):
         # Begin resolving pointer to instantiate an object. If the pointer points to
         # another pointer, then go another level deeper to find the source data.
         try:
-            if self.pointer_type == 1:
+            if self.pointer_depth == 1:
                 self._resolve_pointer(buffer, addr)
             else:
                 self._resolve_pointer_to_pointer(buffer, addr)
@@ -73,7 +73,7 @@ class pointer(DataType):
         return obj
 
     def _resolve_pointer_to_pointer(self, buffer, addr):
-        next_pointer = pointer(self.struct_type, self.pointer_type - 1)
+        next_pointer = pointer(self.struct_type, self.pointer_depth - 1)
         return next_pointer.from_bytes(buffer, addr)
 
     @classmethod
