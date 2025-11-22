@@ -5,7 +5,7 @@ class SoundEffect(Z64Struct):
     """
     Represents sound effect data in an instrument bank.
 
-    .. code-block :: c
+    .. code-block:: c
 
         typedef struct SoundEffect {
             /* 0x00 */ TunedSample tunedSample;
