@@ -57,11 +57,19 @@ issues = "https://github.com/crinuleiroz/z64lib/issues"
 packages = [
     "z64lib",
     "z64lib.audiobank",
+    "z64lib.audiobank.structs",
     "z64lib.audioseq",
+    "z64lib.audioseq.messages",
     "z64lib.audiotable",
     "z64lib.core",
-    "z64lib.extras",
-    "z64lib.extras.randomizers",
+    "z64lib.core.audio",
+    "z64lib.core.enums",
+    "z64lib.core.helpers",
+    # "z64lib.extras",
+    # "z64lib.extras.randomizers",
+    "z64lib.types",
+    "z64lib.types.nstd",
+    "z64lib.types.std",
 ]
 include-package-data = true
 
