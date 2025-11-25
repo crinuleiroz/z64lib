@@ -1,7 +1,8 @@
 from z64lib.types.base import DataType
+from z64lib.types.markers import PrimitiveType
 
 
-class u24(DataType, int):
+class u24(DataType, PrimitiveType, int):
     """ An unsigned 24-bit integer. """
     format: str = None
     signed: bool = False

@@ -1,8 +1,9 @@
 import struct
-from .base import DataType
+from z64lib.types.base import DataType
+from z64lib.types.markers import PointerType
 
 
-class pointer(DataType):
+class pointer(DataType, PointerType):
     """ An unsigned 32-bit integer that indicates an offset to a new structure in the binary data. """
     _DEPTH_MAP = {
         "single": 1,

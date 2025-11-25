@@ -1,7 +1,8 @@
 from z64lib.types.base import DataType
+from z64lib.types.markers import PrimitiveType
 
 
-class s8(DataType, int):
+class s8(DataType, PrimitiveType, int):
     """ A signed 8-bit integer. """
     format: str = '>b'
     signed: bool = True

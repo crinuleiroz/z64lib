@@ -5,6 +5,7 @@ z64lib.types
 A ctypes-like system for defining and parsing Zelda64 binary structs.
 """
 from .base import DataType
+from .markers import *
 from .primitives import *
 from .references import pointer
 from .composites import *
@@ -13,6 +14,12 @@ from .composites import *
 __all__ = [
     # Base
     "DataType",
+    # Type Markers
+    "PointerType",
+    "ArrayType",
+    "BitfieldType",
+    "UnionType",
+    "StructType",
     # Primitives
     "s8",
     "u8",

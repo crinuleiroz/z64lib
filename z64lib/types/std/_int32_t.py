@@ -1,7 +1,8 @@
 from z64lib.types.base import DataType
+from z64lib.types.markers import PrimitiveType
 
 
-class s32(DataType, int):
+class s32(DataType, PrimitiveType, int):
     """ A signed 32-bit integer. """
     format: str = '>i'
     signed: bool = True

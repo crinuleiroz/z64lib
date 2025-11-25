@@ -1,7 +1,8 @@
 from z64lib.types.base import DataType
+from z64lib.types.markers import PrimitiveType
 
 
-class s64(DataType, int):
+class s64(DataType, PrimitiveType, int):
     """ A signed 64-bit integer. """
     format: str = '>q'
     signed: bool = True

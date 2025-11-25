@@ -1,7 +1,8 @@
 from z64lib.types.base import DataType
+from z64lib.types.markers import PrimitiveType
 
 
-class s24(DataType, int):
+class s24(DataType, PrimitiveType, int):
     """ A signed 24-bit integer. """
     format: str = None
     signed: bool = True

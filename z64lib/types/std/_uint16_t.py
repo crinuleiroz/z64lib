@@ -1,7 +1,8 @@
 from z64lib.types.base import DataType
+from z64lib.types.markers import PrimitiveType
 
 
-class u16(DataType, int):
+class u16(DataType, PrimitiveType, int):
     """ An unsigned 16-bit integer. """
     format: str = '>H'
     signed: bool = False

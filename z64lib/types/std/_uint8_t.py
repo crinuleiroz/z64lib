@@ -1,7 +1,8 @@
 from z64lib.types.base import DataType
+from z64lib.types.markers import PrimitiveType
 
 
-class u8(DataType, int):
+class u8(DataType, PrimitiveType, int):
     """ An unsigned 8-bit integer. """
     format: str = '>B'
     signed: bool = False

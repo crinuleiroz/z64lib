@@ -1,7 +1,8 @@
 from z64lib.types.base import DataType
+from z64lib.types.markers import PrimitiveType
 
 
-class f32(DataType, float):
+class f32(DataType, PrimitiveType, float):
     """ A 32-bit single-precision floating-point value. """
     format: str = '>f'
     signed: bool = True
