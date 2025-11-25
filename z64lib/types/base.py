@@ -21,7 +21,7 @@ class DataType:
     def from_bytes(cls, buffer: bytes, offset: int):
         """"""
         if len(buffer) - offset < cls.size():
-            raise ValueError(f'Buffer too small for {cls.__name__}: need {cls.size()} bytes, gor {len(buffer) - offset}')
+            raise ValueError(f'Buffer too small for {cls.__name__}: need {cls.size()} bytes, got {len(buffer) - offset}')
 
         # Standard types
         if cls.format is not None:
