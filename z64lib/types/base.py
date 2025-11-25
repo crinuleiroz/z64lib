@@ -35,20 +35,19 @@ class DataType:
     @classmethod
     def to_bytes(cls, value) -> bytes:
         """"""
-        ret = int(value)
-        if value < cls.MIN or ret > cls.MAX:
+        if value < cls.MIN or value > cls.MAX:
             raise OverflowError(f'Value {value} out of range for {cls.__name__} [{cls.MIN}, {cls.MAX}]')
 
         # Standard types
         if cls.format is not None:
             if issubclass(cls, int):
-                return struct.pack(cls.format, ret)
+                return struct.pack(cls.format, int(value))
             if issubclass(cls, float):
-                return struct.pack(cls.format, float(ret))
+                return struct.pack(cls.format, float(value))
             raise TypeError(f"Unsupported type {cls.__name__}")
 
         # Non-standard types
-        return ret.to_bytes(cls.size(), 'big', signed=cls.signed)
+        return int(value).to_bytes(cls.size(), 'big', signed=cls.signed)
 
     @classmethod
     def _wrap(cls, value: int) -> int:
