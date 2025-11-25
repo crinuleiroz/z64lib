@@ -4,8 +4,8 @@ import inspect
 import struct
 from ._accessors import UnionAccessor
 from ._internals import walk_fields
-from z64lib.types import DataType
-from z64lib.types import pointer
+from .base import DataType
+from .references import pointer
 
 
 #region Array
@@ -376,3 +376,12 @@ class DynaStruct(Z64Struct):
         offset = walk_fields(self._fields_, callback)
         return self.align_to(offset, getattr(self, '_align_', 1))
 #endregion
+
+
+__all__ = [
+    "array",
+    "bitfield",
+    "union",
+    "Z64Struct",
+    "DynaStruct",
+]

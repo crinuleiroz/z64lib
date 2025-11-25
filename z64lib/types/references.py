@@ -1,5 +1,5 @@
 import struct
-from z64lib.types import DataType
+from .base import DataType
 
 
 class pointer(DataType):
@@ -79,3 +79,8 @@ class pointer(DataType):
     @classmethod
     def size(cls):
         return 4
+
+
+__all__ = [
+    "pointer",
+]

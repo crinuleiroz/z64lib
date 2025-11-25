@@ -5,30 +5,27 @@ z64lib.types
 A ctypes-like system for defining and parsing Zelda64 binary structs.
 """
 from .base import DataType
-from .primitives import (
-    u8, s8, u16, s16, u32, s32, u64, s64, f32
-)
-from .references import (
-    pointer
-)
-from .composites import (
-    array, bitfield, union, Z64Struct, DynaStruct
-)
+from .primitives import *
+from .references import pointer
+from .composites import *
 
 
 __all__ = [
     # Base
     "DataType",
     # Primitives
-    "u8",
     "s8",
-    "u16",
+    "u8",
     "s16",
-    "u32",
+    "u16",
     "s32",
-    "u64",
+    "u32",
     "s64",
+    "u64",
     "f32",
+    # Non-standard Primitives
+    "s24",
+    "u24",
     # References
     "pointer",
     # Composites
@@ -36,5 +33,5 @@ __all__ = [
     "bitfield",
     "union",
     "Z64Struct",
-    "DynaStruct"
+    "DynaStruct",
 ]

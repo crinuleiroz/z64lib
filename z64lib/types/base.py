@@ -7,35 +7,48 @@ class DataType:
     format: str = None
     signed: bool = False
     BITS: int = None
+    MIN: int = None
+    MAX: int = None
 
     @classmethod
     def size(cls) -> int:
         """ Returns the size of the data type in bytes. """
         if cls.BITS is None:
             raise NotImplementedError
-        return cls.BITS // 8
+        return (cls.BITS + 7) // 8
 
     @classmethod
     def from_bytes(cls, buffer: bytes, offset: int):
         """"""
-        if cls.format is None:
-            raise NotImplementedError
-        ret = struct.unpack_from(cls.format, buffer, offset)[0]
+        if len(buffer) - offset < cls.size():
+            raise ValueError(f'Buffer too small for {cls.__name__}: need {cls.size()} bytes, gor {len(buffer) - offset}')
+
+        # Standard types
+        if cls.format is not None:
+            ret = struct.unpack_from(cls.format, buffer, offset)[0]
+            return cls(ret)
+
+        # Non-standard types
+        ret = int.from_bytes(buffer[offset:offset + cls.size()], 'big', signed=cls.signed)
         return cls(ret)
 
     @classmethod
     def to_bytes(cls, value) -> bytes:
         """"""
-        if cls.format is None:
-            raise NotImplementedError
+        ret = int(value)
+        if value < cls.MIN or ret > cls.MAX:
+            raise OverflowError(f'Value {value} out of range for {cls.__name__} [{cls.MIN}, {cls.MAX}]')
 
-        if issubclass(cls, int):
-            return struct.pack(cls.format, int(value))
+        # Standard types
+        if cls.format is not None:
+            if issubclass(cls, int):
+                return struct.pack(cls.format, ret)
+            if issubclass(cls, float):
+                return struct.pack(cls.format, float(ret))
+            raise TypeError(f"Unsupported type {cls.__name__}")
 
-        if issubclass(cls, float):
-            return struct.pack(cls.format, float(value))
-
-        raise TypeError(f"Cannot convert value of type {type(value)} for {cls.__name__} to bytes.")
+        # Non-standard types
+        return ret.to_bytes(cls.size(), 'big', signed=cls.signed)
 
     @classmethod
     def _wrap(cls, value: int) -> int:

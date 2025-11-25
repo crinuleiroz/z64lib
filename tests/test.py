@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 # ============== #
 
 # Types
-TEST_TYPES: bool = False
+TEST_TYPES: bool = True
 
 # Instrument Bank
 TEST_BANK: bool = False
@@ -20,7 +20,7 @@ PRINT_BANK_TEST_TARGET: bool = True
 WRITE_BANK: bool = False
 
 # Audio Sequence
-TEST_ASEQ: bool = True
+TEST_ASEQ: bool = False
 
 # Extras
 TEST_EXTRAS: bool = False
@@ -47,7 +47,8 @@ MMRS_FILE: Path = BASE_DIR / "music" / "test_mmrs.mmrs"
 if TEST_TYPES:
     from z64lib.types import *
 
-    print(f'value={s16(0xFFFF)}', f'min={s16.MIN}', f'max={s16.MAX}')
+    print(f'value={s16(0xFFFF)}', f'min={s16.MIN}', f'max={s16.MAX}, bytes={s16.to_bytes(0xFFFF)}')
+
 
 # Audiobank Testing
 if TEST_BANK:
