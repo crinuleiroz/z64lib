@@ -1,9 +1,8 @@
+from enum import IntEnum
 import hashlib
 import struct
 from z64lib.types.base import DataType
 from z64lib.types.markers import *
-from z64lib.types.composites import bitfield
-from z64lib.types._internals import walk_fields
 
 
 class Z64Struct(DataType, StructType):
@@ -13,7 +12,7 @@ class Z64Struct(DataType, StructType):
     Subclasses define a `_fields_` list of (name, type) pairs, similar to ctypes.structures,
     and can be parsed directly from bytes using `Z64Struct.from_bytes()`.
     """
-    _fields_: list[tuple[str, DataType] | tuple[str, DataType, int]] | list[tuple[str, DataType, tuple[str, DataType, int]]] = []
+    _fields_: list[tuple[str, DataType]] = []
     _bool_fields_: list[str] = []
     _enum_fields_: dict[str, type] = {} # field name -> enum
     _align_: int = 1
@@ -21,18 +20,14 @@ class Z64Struct(DataType, StructType):
     @classmethod
     def size(cls) -> int:
         """ Returns the total size of the structure in bytes. """
-        def callback(name, data_type, offset, extra):
-            # Grouped bitfields
-            if extra:
-                base_type = extra[0][1]
-                return offset + base_type.size()
-
-            # Everything else
+        def callback(name, data_type, offset):
             return offset + data_type.size()
 
-        offset = walk_fields(cls._fields_, callback)
+        offset = cls.walk_fields(cls._fields_, callback)
+
         if getattr(cls, '_align_', 1) > 1:
             offset = cls.align_to(offset, cls._align_)
+
         return offset
 
     @classmethod
@@ -54,81 +49,94 @@ class Z64Struct(DataType, StructType):
         """
         obj = cls.__new__(cls)
 
-        def callback(name, data_type, offset, extra):
-            if extra: # Grouped bitfields
-                values = {}
-                base_type = extra[0][1]
-                bit_cursor = 0
-                for subname, sub_type, sub_bits in extra:
-                    bf_type = bitfield(sub_type, sub_bits)
-                    bf_value = bf_type.from_bytes(buffer, offset, bit_cursor)
-                    values[subname] = bf_value
-                    bit_cursor += sub_bits
-                setattr(obj, name, data_type(**values))
-                return offset + base_type.size()
+        def callback(name, data_type, offset):
 
-            if isinstance(data_type, bitfield):
-                raise NotImplementedError()
-
-            if issubclass(data_type, PointerType):
+            if issubclass(data_type, BitfieldType):
                 value = data_type.from_bytes(buffer, offset)
-                setattr(obj, name, value)
-                size = data_type.size()
-                return offset + size
+                offset += data_type.size()
 
-            if issubclass(data_type, ArrayType) and data_type.length is None:
-                setattr(obj, name, None)
-                return offset
+                for sub_name in cls._bool_fields_:
+                    if hasattr(value, sub_name):
+                        setattr(value, sub_name, bool(getattr(value, sub_name)))
+                for sub_name, enum_type in cls._enum_fields_.items():
+                    if hasattr(value, sub_name):
+                        setattr(value, sub_name, enum_type(getattr(value, sub_name)))
 
-            value = data_type.from_bytes(buffer, offset)
+            elif issubclass(data_type, PointerType):
+                value = data_type.from_bytes(buffer, offset)
+                offset += data_type.size()
+
+            elif issubclass(data_type, ArrayType) and data_type.length is None:
+                value = None
+
+            else:
+                value = data_type.from_bytes(buffer, offset)
+                offset += data_type.size()
+
+                if name in cls._bool_fields_:
+                    value = bool(value)
+
+                enum_type = cls._enum_fields_.get(name)
+                if enum_type is not None:
+                    value = enum_type(value)
+
             setattr(obj, name, value)
-            size = data_type.size()
-            return offset + size
+            return offset
 
-        walk_fields(cls._fields_, callback, struct_offset)
+        cls.walk_fields(cls._fields_, callback, struct_offset)
         return obj
 
     def to_bytes(self) -> bytes:
         """ Compiles a struct object from memory into binary data. """
         buffer = bytearray(self.size())
 
-        def callback(name, data_type, offset, extra):
+        def callback(name, data_type, offset):
             value = getattr(self, name)
 
-            # Bitfield group
-            if extra:
-                base_type = extra[0][1]
-                bits = 0
-                bit_cursor = 0
-                for sub_name, sub_type, sub_bits in extra:
-                    sub_val = getattr(value, sub_name)
-                    bf = bitfield(sub_type, sub_bits)
-                    bf_bytes, bits = bf.to_bytes(sub_val, bit_cursor, bits)
-                    bit_cursor += sub_bits
-                buffer[offset:offset + base_type.size()] = base_type.to_bytes(bits)
-                return offset + base_type.size()
-
             # Boolean field
-            if name in getattr(self, "_bool_fields_", []):
+            if name in getattr(self, '_bool_fields_', []):
                 value = 1 if value else 0
+
+            enum_type = self._enum_fields_.get(name)
+            if enum_type is not None and isinstance(value, IntEnum):
+                value = value.value
+
+            if issubclass(data_type, BitfieldType):
+                field_dict = {}
+                for f_name, width in data_type.fields:
+                    val = getattr(value, f_name)
+                    if f_name in self._bool_fields_:
+                        val = 1 if val else 0
+                    enum_type = self._enum_fields_.get(f_name)
+                    if enum_type is not None and isinstance(val, IntEnum):
+                        val = val.value
+                    field_dict[f_name] = val
+                buffer[offset:offset + data_type.size()] = data_type.to_bytes(field_dict)
+                return offset + data_type.size()
+
+            # if issubclass(data_type, BitfieldType):
+            #     field_dict = {}
+            #     for f_name, width in data_type.fields:
+            #         field_dict[f_name] = getattr(value, f_name)
+            #     buffer[offset:offset + data_type.size()] = data_type.to_bytes(field_dict)
+            #     return offset + data_type.size()
 
             # Array
             if issubclass(data_type, ArrayType):
                 if data_type.length is None:
                     raise TypeError(f"Dynamic array field '{name}' must be serialized manually.")
-                size = data_type.size()
-                buffer[offset:offset + size] = data_type.to_bytes(value)
-                return offset + size
+                buffer[offset:offset + data_type.size()] = data_type.to_bytes(value)
+                return offset + data_type.size()
 
-            if issubclass(data_type, ArrayType) and data_type.length is None:
-                return offset
+            # if issubclass(data_type, ArrayType) and data_type.length is None:
+            #     return offset
 
             # Pointer
             if issubclass(data_type, PointerType):
                 buffer[offset:offset + data_type.size()] = data_type.to_bytes(value)
                 return offset + data_type.size()
 
-            # Nested struct
+            # Struct
             if isinstance(value, Z64Struct):
                 buffer[offset:offset + value.size()] = value.to_bytes()
                 return offset + value.size()
@@ -137,39 +145,70 @@ class Z64Struct(DataType, StructType):
             buffer[offset:offset + data_type.size()] = data_type.to_bytes(value)
             return offset + data_type.size()
 
-        walk_fields(self._fields_, callback)
+        self.walk_fields(self._fields_, callback)
         return bytes(buffer)
 
     @staticmethod
     def _read_field(buffer: bytes, offset: int, data_type: DataType) -> tuple[DataType, int]:
-        # Embedded structure
-        offset = Z64Struct.align_field(offset, data_type)
-
+        offset = data_type.align_field(offset, data_type)
         value = data_type.from_bytes(buffer, offset)
         size = data_type.size()
-
         return value, size
 
+    @staticmethod
+    def walk_fields(fields, callback, start_offset: int = 0) -> int:
+        """
+        Walks through the fields of a struct, calling `callback` for each field.
+
+        Parameters
+        ----------
+        fields: list
+            List of struct field definitions (_fields_).
+        callback: Callable[[name, data_type, offset, extra], int]
+            Function called for each field. Must return the new offset after processing.
+        start_offset: int
+            Starting offset.
+
+        Returns
+        ----------
+        int
+            Final offset after processing all fields.
+        """
+        offset = start_offset
+
+        for field in fields:
+            name, data_type = field
+            offset = data_type.align_field(offset, data_type)
+            offset = callback(name, data_type, offset)
+
+        return offset
+
     def _stable_bytes(self) -> bytes:
+        """"""
         buffer = bytearray()
 
-        def callback(name, data_type, offset, extra):
+        def callback(name, data_type, offset):
             value = getattr(self, name)
-
-            if extra:
-                base_type = extra[0][1]
-                bits = 0
-                bit_cursor = 0
-                for sub_name, sub_type, sub_bits in extra:
-                    sub_val = getattr(value, sub_name)
-                    bf = bitfield(sub_type, sub_bits)
-                    bf_bytes, bits = bf.to_bytes(sub_val, bit_cursor, bits)
-                    bit_cursor += sub_bits
-                buffer.extend(base_type.to_bytes(bits))
-                return offset + base_type.size()
 
             if name in getattr(self, '_bool_fields_', []):
                 value = 1 if value else 0
+
+            enum_type = self._enum_fields_.get(name)
+            if enum_type is not None and isinstance(value, IntEnum):
+                value = value.value
+
+            if issubclass(data_type, BitfieldType):
+                field_dict = {}
+                for f_name, width in data_type.fields:
+                    val = getattr(value, f_name)
+                    if f_name in self._bool_fields_:
+                        val = 1 if val else 0
+                    enum_type = self._enum_fields_.get(f_name)
+                    if enum_type is not None and isinstance(val, IntEnum):
+                        val = val.value
+                    field_dict[f_name] = val
+                buffer[offset:offset + data_type.size()] = data_type.to_bytes(field_dict)
+                return offset + data_type.size()
 
             if issubclass(data_type, ArrayType):
                 buffer.extend(data_type.to_bytes(value))
@@ -186,7 +225,7 @@ class Z64Struct(DataType, StructType):
             buffer.extend(data_type.to_bytes(value))
             return offset + data_type.size()
 
-        walk_fields(self._fields_, callback)
+        self.walk_fields(self._fields_, callback)
         return bytes(buffer)
 
     def get_hash(self):

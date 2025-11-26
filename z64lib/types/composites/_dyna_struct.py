@@ -1,6 +1,5 @@
 from ._z64_struct import Z64Struct
 from z64lib.types.markers import *
-from z64lib.types._internals import walk_fields
 
 
 class DynaStruct(Z64Struct):
@@ -11,17 +10,16 @@ class DynaStruct(Z64Struct):
     def size(self) -> int:
         obj = self
 
-        def callback(name, data_type, offset, extra):
+        def callback(name, data_type, offset):
             value = getattr(obj, name, None)
 
             # Nested structs
             if isinstance(value, Z64Struct):
                 return offset + value.size()
 
-            # Grouped bitfields
-            if extra:
-                base_type = extra[0][1]
-                return offset + base_type.size()
+            # Bitfield
+            if issubclass(data_type, BitfieldType):
+                return offset + data_type.size()
 
             # Primitives, pointers, and arrays
             if issubclass(data_type, ArrayType):
@@ -31,5 +29,5 @@ class DynaStruct(Z64Struct):
 
             return offset + data_type.size()
 
-        offset = walk_fields(self._fields_, callback)
+        offset = self.walk_fields(self._fields_, callback)
         return self.align_to(offset, getattr(self, '_align_', 1))

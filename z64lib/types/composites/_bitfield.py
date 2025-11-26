@@ -10,43 +10,96 @@ class bitfield(DataType, BitfieldType):
         2: ('>H', '>h'),
         4: ('>I', '>i'),
     }
+    data_type: type = None
+    fields: list[tuple[str, int]] = None
 
-    def __init__(self, data_type, bit_width):
-        self.data_type = data_type
-        self.bit_width = bit_width
+    def __class_getitem__(cls, params):
+        """"""
+        if not isinstance(params, tuple):
+            data_type = params
+            fields = None
+        else:
+            if len(params) != 2:
+                raise TypeError()
+
+            data_type, fields = params
+
+            if fields is not None and not isinstance(fields, list):
+                raise TypeError()
+
+        return type(
+            f'bitfield_{data_type.__name__}',
+            (cls,),
+            {
+                'data_type': data_type,
+                'fields': fields,
+            },
+        )
+
+    def __init__(self, **values):
+        self.__dict__.update(values)
 
     @property
     def signed(self):
-        return self.data_type.signed
+        return getattr(self.data_type, 'signed', False)
 
-    def size(self):
-        return self.data_type.size()
+    @classmethod
+    def size(cls):
+        return cls.data_type.size()
 
-    def _fmt(self):
-        return self._FMT_MAP[self.size()][1 if self.signed else 0]
+    @classmethod
+    def _is_signed(cls) -> bool:
+        return getattr(cls.data_type, 'signed', False)
 
-    def from_bytes(self, buffer: bytes, offset: int, bit_cursor: int):
-        format = self._fmt()
+    @classmethod
+    def _fmt(cls) -> str:
+        return cls._FMT_MAP[cls.size()][1 if cls._is_signed() else 0]
 
-        # Extracts bits from the structure, then performs the relevant operations
-        # to split the specified bit into a separate attribute for the object.
-        bits = struct.unpack_from(format, buffer, offset)[0]
-        bit_shift = self.size() * 8 - bit_cursor - self.bit_width
-        bit_mask = (1 << self.bit_width) - 1
-        bit_value = (bits >> bit_shift) & bit_mask
+    @classmethod
+    def from_bytes(cls, buffer: bytes, offset: int):
+        fmt = cls._fmt()
+        raw = struct.unpack_from(fmt, buffer, offset)[0]
 
-        # Sign extension
-        if self.signed and (bit_value & (1 << (self.bit_width - 1))):
-            bit_value -= (1 << self.bit_width)
+        bit_cursor = 0
+        values = {}
 
-        return bit_value
+        total_bits = cls.size() * 8
 
-    def to_bytes(self, bit_value: int, bit_cursor: int, base_value: int = 0) -> tuple[bytes, int]:
-        format = self._fmt()
+        # Extracts bits from the structure, then performs the relevant
+        # separation into a separate attribute for the object.
+        for name, width in cls.fields:
+            shift = total_bits - bit_cursor - width
+            mask = (1 << width) - 1
+            value = (raw >> shift) & mask
 
-        # Pack the bits back into a single value.
-        bit_shift = self.size() * 8 - bit_cursor - self.bit_width
-        bit_mask = (1 << self.bit_width) - 1
-        bits = base_value | ((bit_value & bit_mask) << bit_shift)
+            if cls._is_signed() and (value & (1 << (width - 1))):
+                value -= (1 << width)
 
-        return struct.pack(format, bits), bits
+            values[name] = value
+            bit_cursor += width
+
+        return cls(**values)
+
+    @classmethod
+    def to_bytes(self, values: dict):
+        fmt = self._fmt()
+        bits = 0
+        bit_cursor = 0
+        total_bits = self.size() * 8
+
+        for name, width in self.fields:
+            val = values[name]
+            mask = (1 << width) - 1
+            shift = total_bits - bit_cursor - width
+            bits |= (val & mask) << shift
+            bit_cursor += width
+
+        return struct.pack(fmt, bits)
+
+    def __repr__(self):
+        field_parts = []
+        for name, _bits in self.fields:
+            val = getattr(self, name)
+            field_parts.append(f'{name}={val}')
+        inside = ', '.join(field_parts)
+        return f'{type(self).__name__}({inside})'
