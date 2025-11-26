@@ -1,7 +1,7 @@
 from ._z64_struct import Z64Struct
 from z64lib.types.markers import *
-from z64lib.types.composites import array
 from z64lib.types._internals import walk_fields
+
 
 class DynaStruct(Z64Struct):
     """
@@ -24,10 +24,10 @@ class DynaStruct(Z64Struct):
                 return offset + base_type.size()
 
             # Primitives, pointers, and arrays
-            if isinstance(data_type, array):
+            if issubclass(data_type, ArrayType):
                 if value is not None:
                     return offset + len(value) * data_type.data_type.size()
-                return offset + data_type.size()
+                return offset + (data_type.size() if data_type.length is not None else 0)
 
             return offset + data_type.size()
 

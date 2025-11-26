@@ -4,7 +4,7 @@ from z64lib.core.helpers import safe_enum
 from z64lib.types import *
 
 
-class SampleFlags:
+class SampleFlags(BitfieldType):
     """ Represents a Sample struct's bitfield. """
     __slots__ = ('unk_0', '_codec', '_medium', '_is_cached', '_is_relocated', 'size')
 
@@ -95,7 +95,7 @@ class Sample(Z64Struct):
             ('size', u32, 24),
         ]),
         ('sample_addr', u32),
-        ('loop', pointer(VadpcmLoop)),
-        ('book', pointer(VadpcmBook))
+        ('loop', pointer[VadpcmLoop]),
+        ('book', pointer[VadpcmBook])
     ]
     # _align_ = 0x10

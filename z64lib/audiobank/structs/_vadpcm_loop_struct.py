@@ -57,22 +57,20 @@ class VadpcmLoop(DynaStruct):
     """
     _fields_ = [
         ('header', VadpcmLoopHeader),
-        ('predictors', array(s16, 0))
+        ('predictors', array[s16])
     ]
 
     # Override because the array is conditional based on header values
     @classmethod
     def from_bytes(cls, buffer: bytes, struct_addr:int = 0) -> 'VadpcmLoop':
         obj = cls.__new__(cls)
-
         obj.header = VadpcmLoopHeader.from_bytes(buffer, struct_addr)
         header_size = obj.header.size()
 
         if obj.header.loop_start == 0:
-            obj.predictors = array(s16, 0)
+            obj.predictors = array[s16]([])
         else:
-            predictor_addr = struct_addr + header_size
-            obj.predictors = array(s16, 16).from_bytes(buffer, predictor_addr)
+            obj.predictors = array[s16].from_bytes(buffer, struct_addr + header_size, 16)
 
         return obj
 

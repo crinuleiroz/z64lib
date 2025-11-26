@@ -71,7 +71,7 @@ class AdsrSettings(Z64Struct):
     _fields_ = [
         ('decay_index', u8),
         ('sustain', u8),
-        ('envelope', pointer(EnvelopePoint))
+        ('envelope', pointer[EnvelopePoint])
     ]
     _align_ = 4
 
@@ -216,7 +216,7 @@ class AudioSpec(Z64Struct):
         ('unk_07', u8),
         ('unk_08', u8),
         ('num_reverb_settings', u8),
-        ('reverb_settings', pointer(ReverbSettings)),
+        ('reverb_settings', pointer[ReverbSettings]),
         ('dma_sample_buffer_size_1', u16),
         ('dma_sample_buffer_size_2', u16),
         ('unk_14', u16),
@@ -255,6 +255,7 @@ class TempoData(Z64Struct):
     ]
 
 
+#region Audio Heap
 class AudioHeapInitSizes(Z64Struct):
     """
     Represents the intial audio heap sizes.
@@ -282,3 +283,40 @@ class AudioHeapInitSizes(Z64Struct):
         ('init_pool_size', u32),
         ('permanent_pool_size', u32)
     ]
+
+
+class AudioAllocPool(Z64Struct):
+    """
+    Represents metadata associated with a pool.
+
+    .. code-block:: c
+
+        typedef struct AudioAllocPool {
+            /* 0x00 */ u8* startRamAddr;
+            /* 0x04 */ u8* curRamAddr;
+            /* 0x08 */ s32 size;
+            /* 0x0C */ numEntries;
+        } AudioAllocPool; // size = 0x10
+
+    Attributes
+    ----------
+    start_ram_addr : int
+        Start address of the pool.
+    current_ram_addr: int
+        Address of the next available memory for allocation.
+    size: int
+        Size of the pool.
+    num_entries: int
+        Number of entries allocated to the pool.
+    """
+    _fields_ = [
+        ('start_ram_addr', pointer[u8]),
+        ('current_ram_addr', pointer[u8]),
+        ('size', s32),
+        ('num_entries', s32),
+    ]
+
+
+class AudioCacheEntry():
+    ...
+#endregion

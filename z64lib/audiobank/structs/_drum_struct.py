@@ -37,7 +37,7 @@ class Drum(Z64Struct):
         ('pan', u8),
         ('is_relocated', u8),
         ('tuned_sample', TunedSample),
-        ('envelope', pointer(Envelope))
+        ('envelope', pointer[Envelope])
     ]
     _bool_fields_ = ['is_relocated']
     # _align_ = 0x10

@@ -2,8 +2,7 @@ import hashlib
 import struct
 from z64lib.types.base import DataType
 from z64lib.types.markers import *
-from z64lib.types.composites import array, bitfield
-from z64lib.types.references import pointer
+from z64lib.types.composites import bitfield
 from z64lib.types._internals import walk_fields
 
 
@@ -68,13 +67,23 @@ class Z64Struct(DataType, StructType):
                 setattr(obj, name, data_type(**values))
                 return offset + base_type.size()
 
-            elif isinstance(data_type, bitfield):
+            if isinstance(data_type, bitfield):
                 raise NotImplementedError()
-            else:
+
+            if issubclass(data_type, PointerType):
                 value = data_type.from_bytes(buffer, offset)
                 setattr(obj, name, value)
                 size = data_type.size()
                 return offset + size
+
+            if issubclass(data_type, ArrayType) and data_type.length is None:
+                setattr(obj, name, None)
+                return offset
+
+            value = data_type.from_bytes(buffer, offset)
+            setattr(obj, name, value)
+            size = data_type.size()
+            return offset + size
 
         walk_fields(cls._fields_, callback, struct_offset)
         return obj
@@ -104,13 +113,18 @@ class Z64Struct(DataType, StructType):
                 value = 1 if value else 0
 
             # Array
-            if isinstance(data_type, array):
-                size = len(value) * data_type.data_type.size()
+            if issubclass(data_type, ArrayType):
+                if data_type.length is None:
+                    raise TypeError(f"Dynamic array field '{name}' must be serialized manually.")
+                size = data_type.size()
                 buffer[offset:offset + size] = data_type.to_bytes(value)
                 return offset + size
 
+            if issubclass(data_type, ArrayType) and data_type.length is None:
+                return offset
+
             # Pointer
-            if isinstance(data_type, pointer):
+            if issubclass(data_type, PointerType):
                 buffer[offset:offset + data_type.size()] = data_type.to_bytes(value)
                 return offset + data_type.size()
 
@@ -157,11 +171,11 @@ class Z64Struct(DataType, StructType):
             if name in getattr(self, '_bool_fields_', []):
                 value = 1 if value else 0
 
-            if isinstance(data_type, array):
+            if issubclass(data_type, ArrayType):
                 buffer.extend(data_type.to_bytes(value))
                 return offset + len(value) * data_type.data_type.size()
 
-            if isinstance(data_type, pointer):
+            if issubclass(data_type, PointerType):
                 buffer.extend(struct.pack('>I', 0xFFFFFFFF))
                 return offset + 4
 

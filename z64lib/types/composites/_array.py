@@ -3,16 +3,38 @@ from z64lib.types.markers import ArrayType
 
 class array(DataType, ArrayType):
     """ Represents a fixed-size array of field types. """
-    def __init__(self, data_type: DataType, length: int):
-        self.data_type = data_type
-        self.length = length
-        self.items = []
+    data_type: type = None
+    length: int = 0
+
+    def __class_getitem__(cls, params):
+        """"""
+        if not isinstance(params, tuple):
+            data_type = params
+            length = None
+        else:
+            if len(params) != 2:
+                raise TypeError('array[...] must be array[T] or array[T, length]')
+            data_type, length = params
+            if length is not None and (not isinstance(length, int) or length < 0):
+                raise TypeError('length must be a positive integer')
+
+        return type(
+            f'array_{data_type.__name__}_{length}',
+            (cls,),
+            {
+                'data_type': data_type,
+                'length': length,
+            },
+        )
+
+    def __init__(self, items=None):
+        self.items = items if items is not None else []
 
     def __iter__(self):
         return iter(self.items)
 
-    def __getitem__(self, index):
-        return self.items[index]
+    def __getitem__(self, i):
+        return self.items[i]
 
     def __len__(self):
         return len(self.items)
@@ -27,23 +49,38 @@ class array(DataType, ArrayType):
     def signed(self):
         return getattr(self.data_type, 'signed', False)
 
-    def size(self):
-        return self.data_type.size() * self.length
+    @classmethod
+    def size(cls):
+        if cls.length is None:
+            raise TypeError('Dynamic array has no static size.')
+        return cls.data_type.size() * cls.length
 
-    def from_bytes(self, buffer: bytes, offset: int):
-        self.items = []
+    @classmethod
+    def from_bytes(cls, buffer: bytes, offset: int, length: int | None = None):
+        """"""
+        if cls.length is None:
+            if length is None:
+                raise TypeError('Dynamic array requires a length argument.')
+            actual_len = length
+        else:
+            actual_len = cls.length
 
-        for i in range(self.length):
-            item_offset = offset + i * self.data_type.size()
-            item = self.data_type.from_bytes(buffer, item_offset)
-            self.items.append(item)
+        items = []
+        size = cls.data_type.size()
 
-        return self
+        for i in range(actual_len):
+            item_offset = offset + i * size
+            item = cls.data_type.from_bytes(buffer, item_offset)
+            items.append(item)
 
-    def to_bytes(self, values):
+        return cls(items)
+
+    @classmethod
+    def to_bytes(cls, values):
+        if cls.length is not None and len(values) != cls.length:
+            raise ValueError(f'Expected {cls.length} items, got {len(values)}')
+
         data = bytearray()
-
         for v in values:
-            data += self.data_type.to_bytes(v)
-
+            data += cls.data_type.to_bytes(v)
         return bytes(data)

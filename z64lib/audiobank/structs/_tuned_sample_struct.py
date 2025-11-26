@@ -22,6 +22,6 @@ class TunedSample(Z64Struct):
         audio sample during playback.
     """
     _fields_ = [
-        ("sample", pointer(Sample)),
+        ("sample", pointer[Sample]),
         ("tuning", f32)
     ]

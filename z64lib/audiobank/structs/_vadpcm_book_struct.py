@@ -44,25 +44,29 @@ class VadpcmBook(DynaStruct):
     """
     _fields_ = [
         ('header', VadpcmBookHeader),
-        ('predictors', array(s16, 0))
+        ('predictors', array[s16])
     ]
     _align_ = 0x10
 
     @classmethod
     def from_bytes(cls, buffer: bytes, struct_offset: int = 0) -> 'VadpcmBook':
         obj = cls.__new__(cls)
-
         obj.header = VadpcmBookHeader.from_bytes(buffer, struct_offset)
-        header_size = obj.header.size()
 
         order = obj.header.order
         num_predictors = obj.header.num_predictors
         total_coeff = 8 * order * num_predictors
 
-        predictor_offset = struct_offset + header_size
-        obj.predictors = array(s16, total_coeff).from_bytes(buffer, predictor_offset)
-
+        predictor_offset = struct_offset + obj.header.size()
+        obj.predictors = array[s16].from_bytes(buffer, predictor_offset, total_coeff)
         return obj
+
+    def to_bytes(self):
+        out = bytearray()
+        out += self.header.to_bytes()
+        for v in self.predictors:
+            out += s16.to_bytes(v)
+        return bytes(out)
 
     def __repr__(self):
         header_repr = repr(self.header).replace('\n', '\n  ')

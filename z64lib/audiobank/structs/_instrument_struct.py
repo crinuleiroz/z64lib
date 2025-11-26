@@ -47,7 +47,7 @@ class Instrument(Z64Struct):
         ('low_key_region', u8),
         ('high_key_region', u8),
         ('decay_index', u8),
-        ('envelope', pointer(Envelope)),
+        ('envelope', pointer[Envelope]),
         ('low_region_sample', TunedSample),
         ('prim_region_sample', TunedSample),
         ('high_region_sample', TunedSample),
