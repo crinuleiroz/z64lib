@@ -1,6 +1,7 @@
 from z64lib.types.base import DataType
 from z64lib.types.markers import ArrayType
 
+
 class array(DataType, ArrayType):
     """ Represents a fixed-size array of field types. """
     data_type: type = None

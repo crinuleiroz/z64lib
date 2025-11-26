@@ -64,6 +64,12 @@ class bitfield(DataType, BitfieldType):
         values = {}
 
         total_bits = cls.size() * 8
+        sum_of_widths = sum(width for _, width in cls.fields)
+        if sum_of_widths != total_bits:
+            raise ValueError(
+                f"Bitfield definition mismatch: sum of field widths ({sum_of_widths}) "
+                f"does not equal total size in bits ({total_bits})"
+            )
 
         # Extracts bits from the structure, then performs the relevant
         # separation into a separate attribute for the object.
