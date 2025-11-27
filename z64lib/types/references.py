@@ -19,11 +19,16 @@ class pointer(DataType, PointerType):
             data_type, depth = params, 1
         else:
             if len(params) != 2:
-                raise TypeError("pointer[...] must be pointer[T] or pointer[T, depth].")
+                raise TypeError("pointer[...] must be pointer[T] or pointer[T, depth]")
             data_type, depth = params
 
+        if isinstance(depth, str):
+            if depth not in cls._DEPTH_MAP:
+                raise ValueError(f"Unknown pointer depth: {depth}")
+            depth = cls._DEPTH_MAP[depth]
+
         if not isinstance(depth, int) or depth < 1:
-            raise TypeError("pointer depth must be a positive integer.")
+            raise TypeError("Pointer depth must be a positive integer")
 
         return type(
             f'pointer_to_{data_type.__name__}_d{depth}',
