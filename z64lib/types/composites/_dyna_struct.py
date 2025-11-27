@@ -13,7 +13,7 @@ class DynaStruct(Z64Struct):
         def callback(name, data_type, offset):
             value = getattr(obj, name, None)
 
-            # Nested structs
+            # Struct
             if isinstance(value, Z64Struct):
                 return offset + value.size()
 
@@ -21,12 +21,13 @@ class DynaStruct(Z64Struct):
             if issubclass(data_type, BitfieldType):
                 return offset + data_type.size()
 
-            # Primitives, pointers, and arrays
+            # Array
             if issubclass(data_type, ArrayType):
                 if value is not None:
                     return offset + len(value) * data_type.data_type.size()
                 return offset + (data_type.size() if data_type.length is not None else 0)
 
+            # Primtive, Pointer
             return offset + data_type.size()
 
         offset = self.walk_fields(self._fields_, callback)

@@ -62,6 +62,10 @@ class Z64Struct(DataType, StructType):
                     if hasattr(value, sub_name):
                         setattr(value, sub_name, enum_type(getattr(value, sub_name)))
 
+            elif issubclass(data_type, UnionType):
+                value = data_type.from_bytes(buffer, offset)
+                offset += data_type.size()
+
             elif issubclass(data_type, PointerType):
                 value = data_type.from_bytes(buffer, offset)
                 offset += data_type.size()
@@ -114,12 +118,9 @@ class Z64Struct(DataType, StructType):
                 buffer[offset:offset + data_type.size()] = data_type.to_bytes(field_dict)
                 return offset + data_type.size()
 
-            # if issubclass(data_type, BitfieldType):
-            #     field_dict = {}
-            #     for f_name, width in data_type.fields:
-            #         field_dict[f_name] = getattr(value, f_name)
-            #     buffer[offset:offset + data_type.size()] = data_type.to_bytes(field_dict)
-            #     return offset + data_type.size()
+            if issubclass(data_type, UnionType):
+                buffer[offset:offset + data_type.size()] = value.to_bytes()
+                return offset + data_type.size()
 
             # Array
             if issubclass(data_type, ArrayType):
@@ -208,6 +209,10 @@ class Z64Struct(DataType, StructType):
                         val = val.value
                     field_dict[f_name] = val
                 buffer[offset:offset + data_type.size()] = data_type.to_bytes(field_dict)
+                return offset + data_type.size()
+
+            if issubclass(data_type, UnionType):
+                buffer.extend(value.to_bytes())
                 return offset + data_type.size()
 
             if issubclass(data_type, ArrayType):

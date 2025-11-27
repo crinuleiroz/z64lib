@@ -1,6 +1,5 @@
 from z64lib.audiobank.structs import VadpcmLoop, VadpcmBook
 from z64lib.core.enums import AudioSampleCodec, AudioStorageMedium
-from z64lib.core.helpers import safe_enum
 from z64lib.types import *
 
 
