@@ -25,7 +25,7 @@ class Z64Struct(DataType, StructType):
 
         offset = cls.walk_fields(cls._fields_, callback)
 
-        if getattr(cls, '_align_', 1) > 1:
+        if cls._align_ > 1:
             offset = cls.align_to(offset, cls._align_)
 
         return offset
@@ -50,7 +50,15 @@ class Z64Struct(DataType, StructType):
         obj = cls.__new__(cls)
 
         def callback(name, data_type, offset):
+            value = None
+            enum_type = cls._enum_fields_.get(name)
 
+            # Primitive
+            if issubclass(data_type, PrimitiveType):
+                value = data_type.from_bytes(buffer, offset)
+                offset += data_type.size()
+
+            # Bitfield
             if issubclass(data_type, BitfieldType):
                 value = data_type.from_bytes(buffer, offset)
                 offset += data_type.size()
@@ -62,27 +70,43 @@ class Z64Struct(DataType, StructType):
                     if hasattr(value, sub_name):
                         setattr(value, sub_name, enum_type(getattr(value, sub_name)))
 
-            elif issubclass(data_type, UnionType):
+            # Union
+            if issubclass(data_type, UnionType):
                 value = data_type.from_bytes(buffer, offset)
                 offset += data_type.size()
 
-            elif issubclass(data_type, PointerType):
+            # Array
+            if issubclass(data_type, ArrayType):
+                if data_type.length is None:
+                    value = None
+                else:
+                    value = data_type.from_bytes(buffer, offset)
+                    offset += data_type.size()
+
+            # Struct
+            if issubclass(data_type, StructType):
                 value = data_type.from_bytes(buffer, offset)
                 offset += data_type.size()
 
-            elif issubclass(data_type, ArrayType) and data_type.length is None:
-                value = None
-
-            else:
-                value = data_type.from_bytes(buffer, offset)
+            # Pointer
+            if issubclass(data_type, PointerType):
+                value = data_type.from_bytes(buffer, offset).deref(buffer)
                 offset += data_type.size()
 
-                if name in cls._bool_fields_:
-                    value = bool(value)
+            # Bool field
+            if (
+                name in cls._bool_fields_
+                and value is not None
+            ):
+                value = bool(value)
 
-                enum_type = cls._enum_fields_.get(name)
-                if enum_type is not None:
-                    value = enum_type(value)
+            # Enum field
+            if (
+                enum_type is not None
+                and value is not None
+                and not issubclass(data_type, BitfieldType)
+            ):
+                value = enum_type(value)
 
             setattr(obj, name, value)
             return offset
@@ -96,28 +120,30 @@ class Z64Struct(DataType, StructType):
 
         def callback(name, data_type, offset):
             value = getattr(self, name)
+            enum_type = self._enum_fields_.get(name)
 
-            # Boolean field
-            if name in getattr(self, '_bool_fields_', []):
+            # Bool field
+            if name in self._bool_fields_:
                 value = 1 if value else 0
 
-            enum_type = self._enum_fields_.get(name)
-            if enum_type is not None and isinstance(value, IntEnum):
+            # Enum field
+            if (
+                enum_type is not None
+                and isinstance(value, IntEnum)
+            ):
                 value = value.value
 
-            if issubclass(data_type, BitfieldType):
-                field_dict = {}
-                for f_name, width in data_type.fields:
-                    val = getattr(value, f_name)
-                    if f_name in self._bool_fields_:
-                        val = 1 if val else 0
-                    enum_type = self._enum_fields_.get(f_name)
-                    if enum_type is not None and isinstance(val, IntEnum):
-                        val = val.value
-                    field_dict[f_name] = val
-                buffer[offset:offset + data_type.size()] = data_type.to_bytes(field_dict)
+            # Primitive
+            if issubclass(data_type, PrimitiveType):
+                buffer[offset:offset + data_type.size()] = data_type.to_bytes(value)
                 return offset + data_type.size()
 
+            # Bitfield
+            if issubclass(data_type, BitfieldType):
+                buffer[offset:offset + data_type.size()] = value.to_bytes()
+                return offset + data_type.size()
+
+            # Union
             if issubclass(data_type, UnionType):
                 buffer[offset:offset + data_type.size()] = value.to_bytes()
                 return offset + data_type.size()
@@ -125,26 +151,34 @@ class Z64Struct(DataType, StructType):
             # Array
             if issubclass(data_type, ArrayType):
                 if data_type.length is None:
-                    raise TypeError(f"Dynamic array field '{name}' must be serialized manually.")
-                buffer[offset:offset + data_type.size()] = data_type.to_bytes(value)
-                return offset + data_type.size()
-
-            # if issubclass(data_type, ArrayType) and data_type.length is None:
-            #     return offset
-
-            # Pointer
-            if issubclass(data_type, PointerType):
-                buffer[offset:offset + data_type.size()] = data_type.to_bytes(value)
-                return offset + data_type.size()
+                    if hasattr(value, 'to_bytes'):
+                        dyn_bytes = value.to_bytes()
+                        buffer[offset:offset + len(dyn_bytes)] = dyn_bytes
+                        return offset + len(dyn_bytes)
+                    else:
+                        for i, item in enumerate(value):
+                            buffer[offset:offset + data_type.data_type.size()] = data_type.data_type.to_bytes()
+                            offset += data_type.data_type.size()
+                        return offset
+                else:
+                    buffer[offset:offset + data_type.size()] = data_type.to_bytes(value)
+                    return offset + data_type.size()
 
             # Struct
-            if isinstance(value, Z64Struct):
+            if issubclass(data_type, StructType):
                 buffer[offset:offset + value.size()] = value.to_bytes()
                 return offset + value.size()
 
-            # Primitive
-            buffer[offset:offset + data_type.size()] = data_type.to_bytes(value)
-            return offset + data_type.size()
+            # Pointer
+            if issubclass(data_type, PointerType):
+                if hasattr(value, 'obj'):
+                    buffer[offset:offset + data_type.size()] = value.to_bytes()
+                else:
+                    temp_ptr = data_type(obj=value)
+                    buffer[offset:offset + data_type.size()] = temp_ptr.to_bytes()
+                return offset + data_type.size()
+
+            raise TypeError()
 
         self.walk_fields(self._fields_, callback)
         return bytes(buffer)
@@ -190,25 +224,19 @@ class Z64Struct(DataType, StructType):
 
         def callback(name, data_type, offset):
             value = getattr(self, name)
+            enum_type = self._enum_fields_.get(name)
 
-            if name in getattr(self, '_bool_fields_', []):
+            if name in self._bool_fields_:
                 value = 1 if value else 0
 
-            enum_type = self._enum_fields_.get(name)
-            if enum_type is not None and isinstance(value, IntEnum):
+            if (
+                enum_type is not None
+                and isinstance(value, IntEnum)
+            ):
                 value = value.value
 
             if issubclass(data_type, BitfieldType):
-                field_dict = {}
-                for f_name, width in data_type.fields:
-                    val = getattr(value, f_name)
-                    if f_name in self._bool_fields_:
-                        val = 1 if val else 0
-                    enum_type = self._enum_fields_.get(f_name)
-                    if enum_type is not None and isinstance(val, IntEnum):
-                        val = val.value
-                    field_dict[f_name] = val
-                buffer[offset:offset + data_type.size()] = data_type.to_bytes(field_dict)
+                buffer.extend(value.to_bytes())
                 return offset + data_type.size()
 
             if issubclass(data_type, UnionType):
@@ -216,14 +244,14 @@ class Z64Struct(DataType, StructType):
                 return offset + data_type.size()
 
             if issubclass(data_type, ArrayType):
-                buffer.extend(data_type.to_bytes(value))
+                buffer.extend(value.to_bytes())
                 return offset + len(value) * data_type.data_type.size()
 
             if issubclass(data_type, PointerType):
                 buffer.extend(struct.pack('>I', 0xFFFFFFFF))
-                return offset + 4
+                return offset + data_type.size()
 
-            if isinstance(value, Z64Struct):
+            if issubclass(data_type, StructType):
                 buffer.extend(value._stable_bytes())
                 return offset + value.size()
 
@@ -241,13 +269,15 @@ class Z64Struct(DataType, StructType):
         lines = [f'{type(self).__name__}(']
 
         for field in self._fields_:
-            name = field[0]
+            name, data_type = field
             value = getattr(self, name)
+
             if isinstance(value, Z64Struct):
                 value_repr = repr(value).replace('\n', '\n  ')
-                lines.append(f'  {name}={value_repr}')
             else:
-                lines.append(f'  {name}={value}')
+                value_repr = repr(value)
+
+            lines.append(f'  {name}={value_repr}')
         lines.append(')')
 
         return '\n'.join(lines)

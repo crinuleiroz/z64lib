@@ -76,12 +76,8 @@ class array(DataType, ArrayType):
 
         return cls(items)
 
-    @classmethod
-    def to_bytes(cls, values):
-        if cls.length is not None and len(values) != cls.length:
-            raise ValueError(f'Expected {cls.length} items, got {len(values)}')
-
+    def to_bytes(self):
         data = bytearray()
-        for v in values:
-            data += cls.data_type.to_bytes(v)
+        for v in self.items:
+            data += self.data_type.to_bytes(v)
         return bytes(data)

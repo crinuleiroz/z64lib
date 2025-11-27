@@ -1,3 +1,4 @@
+from enum import IntEnum
 import struct
 from z64lib.types.base import DataType
 from z64lib.types.markers import BitfieldType
@@ -86,15 +87,20 @@ class bitfield(DataType, BitfieldType):
 
         return cls(**values)
 
-    @classmethod
-    def to_bytes(self, values: dict):
+    def to_bytes(self):
         fmt = self._fmt()
         bits = 0
         bit_cursor = 0
-        total_bits = self.size() * 8
+        total_bits = self.data_type.size() * 8
 
         for name, width in self.fields:
-            val = values[name]
+            val = getattr(self, name)
+
+            if isinstance(val, bool):
+                val = 1 if val else 0
+            if isinstance(val, IntEnum):
+                val = val.value
+
             mask = (1 << width) - 1
             shift = total_bits - bit_cursor - width
             bits |= (val & mask) << shift
