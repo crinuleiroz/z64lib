@@ -1,15 +1,25 @@
-import struct
 from z64lib.types.base import DataType
 from z64lib.types.markers import PointerType
 
 
 class pointer(DataType, PointerType):
     """ An unsigned 32-bit integer that indicates an offset to a new structure in the binary data. """
-    _DEPTH_MAP = {
+    format: str = '>I'
+    signed: bool = False
+
+    # Bit Width and Min/Max
+    BITS: int = 32
+    MIN: int = 0b00000000000000000000000000000000
+    MAX: int = 0b11111111111111111111111111111111
+
+    # Type Flags
+    is_pointer: bool = True
+
+    # Pointer specific data
+    _DEPTH_MAP: dict[str, int] = {
         'single': 1,
         'double': 2,
     }
-
     data_type: DataType = None
     pointer_depth: int = 1
 
@@ -39,49 +49,55 @@ class pointer(DataType, PointerType):
             },
         )
 
-    def __init__(self, addr=None, obj=None):
-        self.addr = addr
-        self.obj = obj
+    def __init__(self, reference: DataType = None, target_address: int = 0,
+                 original_address: int = 0, nullable: bool = True):
+        self.reference = reference
+        self.target_address = target_address
+        self.original_address = original_address
+        self.allocated_address = 0 # Consistency only, never used
+        self.nullable = nullable
 
     @classmethod
     def from_bytes(cls, buffer: bytes, offset: int):
-        """
-        Instantiates a structure referenced by this pointer from binary data.
+        """"""
+        target_address = cls._get_struct().unpack_from(buffer, offset)[0]
+        return cls(None, target_address, offset)
 
-        Parameters
-        ----------
-        buffer: bytes
-            Binary struct data.
-        offset: int
-            Offset to the struct.
+    def dereference(self, buffer: bytes, resolve_all: bool = False):
+        """"""
+        if self.target_address == 0 or self.target_address >= len(buffer):
+            self.reference = None
+            if not self.nullable:
+                raise ValueError(f"Pointer at offset {self.original_address} cannot be null")
+            return None
 
-        Returns
-        ----------
-        object
-            Returns a fully instantiated object for the given struct type.
-            If the address is 0 or out of bounds, returns None instead.
-        """
-        addr = struct.unpack_from('>I', buffer, offset)[0]
-        return cls(addr=addr)
-
-    def dereference(self, buffer: bytes):
-        if self.addr == 0 or self.addr >= len(buffer):
-            self.obj = None
-        elif self.pointer_depth == 1:
-            self.obj = self.data_type.from_bytes(buffer, self.addr)
-            self.obj._original_address = self.addr
+        if self.pointer_depth == 1:
+            self.reference = self.data_type.from_bytes(buffer, self.target_address)
+            self.reference.original_address = self.target_address
         else:
-            self.obj = pointer[self.data_type, self.pointer_depth - 1](addr=self.addr).deref(buffer)
-        return self.obj
+            next_ptr_cls = pointer[self.data_type, self.pointer_depth - 1]
+            self.reference = next_ptr_cls().from_bytes(buffer, self.target_address)
+
+        if resolve_all:
+            current = self.reference
+            while isinstance(current, pointer):
+                current = current.dereference(buffer, resolve_all=True)
+            self.reference = current
+
+        return self.reference
 
     def to_bytes(self):
-        addr = getattr(self.obj, '_address', self.addr or 0)
-        return struct.pack('>I', addr)
+        """"""
+        addr = self.address
+        if addr is None:
+            raise ValueError(f"Pointer {self} cannot be null")
+        return self._get_struct().pack(self.address)
 
-    @classmethod
-    def size(cls):
-        return 4
-
+    @property
+    def address(self):
+        if self.reference is None:
+            return 0 if self.nullable else None
+        return getattr(self.reference, 'allocated_address', 0) or getattr(self.reference, 'original_address', 0)
 
 __all__ = [
     'pointer',

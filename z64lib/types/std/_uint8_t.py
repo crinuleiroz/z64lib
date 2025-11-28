@@ -6,9 +6,14 @@ class u8(DataType, PrimitiveType, int):
     """ An unsigned 8-bit integer. """
     format: str = '>B'
     signed: bool = False
+
+    # Bit Width and Min/Max
     BITS: int = 8
     MIN: int = 0b00000000
     MAX: int = 0b11111111
+
+    # Type Flags
+    is_primitive: bool = True
 
     def __new__(cls, value: int) -> int:
         return int.__new__(cls, cls._wrap(value))

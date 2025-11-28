@@ -1,4 +1,3 @@
-from enum import IntEnum
 import struct
 from z64lib.types.base import DataType
 from z64lib.types.markers import BitfieldType
@@ -6,12 +5,16 @@ from z64lib.types.markers import BitfieldType
 
 class bitfield(DataType, BitfieldType):
     """ A number of bits that represent a single field in a struct. """
-    _FMT_MAP = {
+    # Type Flags
+    is_bitfield: bool = True
+
+    # Bitfield specific data
+    _FMT_MAP: dict[int, tuple[str, str]] = {
         1: ('>B', '>b'),
         2: ('>H', '>h'),
         4: ('>I', '>i'),
     }
-    data_type: type = None
+    data_type: DataType = None
     fields: list[tuple[str, int]] = None
 
     def __class_getitem__(cls, params):

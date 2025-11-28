@@ -4,6 +4,10 @@ from z64lib.types.markers import *
 
 class union(DataType, UnionType):
     """ A struct member whose memory is shared by multiple values. """
+    # Type Flags
+    is_union: bool = True
+
+    # Union specific data
     max_size: int = None
     fields: list[tuple[str, DataType]] = None
 

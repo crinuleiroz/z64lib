@@ -4,6 +4,14 @@ from z64lib.types.markers import ArrayType
 
 class array(DataType, ArrayType):
     """ Represents a fixed-size array of field types. """
+    # Type Flags
+    is_array: bool = True
+
+    # Static/Dynamic Flags
+    is_static: bool = True
+    is_dyna: bool = False
+
+    # Array specific data
     data_type: type = None
     length: int = 0
 
@@ -19,17 +27,25 @@ class array(DataType, ArrayType):
             if length is not None and (not isinstance(length, int) or length < 0):
                 raise TypeError("Array length must be a positive integer")
 
+        # Determine static vs. dynamic
+        is_static = length not in (None, 0)
+        is_dyna = length in (None, 0)
+
         return type(
             f'array_{data_type.__name__}_{length}',
             (cls,),
             {
                 'data_type': data_type,
                 'length': length,
+                'is_static': is_static,
+                'is_dyna': is_dyna,
             },
         )
 
-    def __init__(self, items=None):
+    def __init__(self, items=None, original_address: int = 0, allocated_address: int = 0):
         self.items = items if items is not None else []
+        self.original_address = original_address
+        self.allocated_address = allocated_address
 
     def __iter__(self):
         return iter(self.items)
@@ -75,7 +91,7 @@ class array(DataType, ArrayType):
             item = cls.data_type.from_bytes(buffer, item_offset)
             items.append(item)
 
-        return cls(items)
+        return cls(items, offset)
 
     def dyna_size(self):
         """"""

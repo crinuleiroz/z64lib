@@ -6,6 +6,10 @@ from z64lib.types.markers import *
 
 class Z64Struct(DataType, StructType):
     """ Static-sized Zelda64 struct. """
+    # Type Flags
+    is_struct: bool = True
+
+    # Struct specific data
     _fields_: list[tuple[str, DataType]] = []
     _bools_: set[str] = set() # Set of field name
     _enums_: dict[str, type] = dict() # Dictionary of field name and enum class
@@ -13,7 +17,28 @@ class Z64Struct(DataType, StructType):
     _layout_: list = None
     _struct_size_: int = 0
 
-    is_dyna: bool = False
+    # Handlers
+    _FROM_BYTES_HANDLERS = {
+        'is_primitive': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset),
+        'is_bitfield': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset, bools, enums),
+        'is_union': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset),
+        'is_array': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset),
+        'is_struct': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset),
+        'is_pointer': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset).dereference(buffer, True),
+    }
+
+    _TO_BYTES_HANDLERS = {
+        'is_primitive': lambda self, attr, field: field.type.to_bytes(attr),
+        'is_bitfield': lambda self, attr, field: attr.to_bytes(self._bools_, self._enums_),
+        'is_union': lambda self, attr, field: attr.to_bytes(),
+        'is_array': lambda self, attr, field: attr.to_bytes(),
+        'is_struct': lambda self, attr, field: attr.to_bytes(),
+        'is_pointer': lambda self, attr, field: (
+            attr.to_bytes() if isinstance(attr, field.type)
+            else field.type(reference=attr).to_bytes() if attr is not None
+            else struct.pack('>I', 0x00000000)
+        ),
+    }
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -40,36 +65,61 @@ class Z64Struct(DataType, StructType):
         cls._struct_size_ = offset
 
     @classmethod
-    def _describe_field(cls, name, data_type, offset, attr=None):
+    def _describe_field(cls, name, data_type: DataType, offset, attr=None):
         """ Return (Field, new_offset) for one field. """
         offset = data_type.align_field(offset, data_type)
 
-        if issubclass(data_type, PrimitiveType):
-            size = data_type.size()
-            kind = 'primitive'
-        elif issubclass(data_type, BitfieldType):
-            size = data_type.size()
-            kind = 'bitfield'
-        elif issubclass(data_type, UnionType):
-            size = data_type.size()
-            kind = 'union'
-        elif issubclass(data_type, ArrayType):
-            if data_type.length is None:
-                size = (len(attr) * data_type.data_type.size()) if attr else 0
-            else:
-                size = data_type.size()
-            kind = 'array'
-        elif issubclass(data_type, StructType):
-            if isinstance(attr, Z64Struct):
-                size = attr.size()
-            else:
-                size = data_type.size()
-            kind = 'struct'
-        elif issubclass(data_type, PointerType):
-            size = data_type.size()
-            kind = 'pointer'
+        kind_map = [
+            ('is_primitive', 'primitive'),
+            ('is_bitfield', 'bitfield'),
+            ('is_union', 'union'),
+            ('is_array', 'array'),
+            ('is_struct', 'struct'),
+            ('is_pointer', 'pointer'),
+        ]
+
+        kind = None
+        for flag, k in kind_map:
+            if getattr(data_type, flag, False):
+                kind = k
+                break
+        if kind is None:
+            raise TypeError(f"Unsupported type {data_type}")
+
+        if kind == 'array' and data_type.length is None:
+            size = (len(attr) * data_type.data_type.size()) if attr else 0
+        elif kind == 'struct' and isinstance(attr, Z64Struct):
+            size = attr.size()
         else:
-            raise TypeError()
+            size = data_type.size()
+
+        # T = data_type
+        # if T.is_primitive:
+        #     size = data_type.size()
+        #     kind = 'primitive'
+        # elif T.is_bitfield:
+        #     size = data_type.size()
+        #     kind = 'bitfield'
+        # elif T.is_union:
+        #     size = data_type.size()
+        #     kind = 'union'
+        # elif T.is_array:
+        #     if data_type.length is None:
+        #         size = (len(attr) * data_type.data_type.size()) if attr else 0
+        #     else:
+        #         size = data_type.size()
+        #     kind = 'array'
+        # elif T.is_struct:
+        #     if isinstance(attr, Z64Struct):
+        #         size = attr.size()
+        #     else:
+        #         size = data_type.size()
+        #     kind = 'struct'
+        # elif T.is_pointer:
+        #     size = data_type.size()
+        #     kind = 'pointer'
+        # else:
+        #     raise TypeError()
 
         enum_cls = cls._enums_.get(name)
         is_bool = name in cls._bools_
@@ -92,25 +142,34 @@ class Z64Struct(DataType, StructType):
             if not isinstance(field, Field):
                 raise TypeError(f"Expected Field, got {type(field)}")
 
-            field_offset = offset + field.offset
 
-            T = field.type
-            if issubclass(T, PrimitiveType):
-                attr = T.from_bytes(buffer, field_offset)
-            elif issubclass(T, BitfieldType):
-                attr = T.from_bytes(buffer, field_offset, cls._bools_, cls._enums_)
-            elif issubclass(T, StructType):
-                attr = T.from_bytes(buffer, field_offset)
-            elif issubclass(T, ArrayType):
-                if T.length is None:
-                    raise TypeError(f"Dynamic array '{field.name}' requires manual length")
-                attr = T.from_bytes(buffer, field_offset)
-            elif issubclass(T, PointerType):
-                attr = T.from_bytes(buffer, field_offset).dereference(buffer)
-            elif issubclass(T, UnionType):
-                attr = T.from_bytes(buffer, field_offset)
+            T: DataType = field.type
+            field_offset = offset + field.offset
+            attr = None
+
+            for flag, handler in cls._FROM_BYTES_HANDLERS.items():
+                if getattr(T, flag, False):
+                    attr = handler(T, buffer, field_offset, cls._bools_, cls._enums_)
+                    break
             else:
-                raise TypeError(f"Unsupported field type: {T}")
+                raise TypeError(f"Unsupported field type {T}")
+
+            # if T.is_primitive:
+            #     attr = T.from_bytes(buffer, field_offset)
+            # elif T.is_bitfield:
+            #     attr = T.from_bytes(buffer, field_offset, cls._bools_, cls._enums_)
+            # elif T.is_union:
+            #     attr = T.from_bytes(buffer, field_offset)
+            # elif T.is_array:
+            #     if T.length is None:
+            #         raise TypeError(f"Dynamic array '{field.name}' requires manual length")
+            #     attr = T.from_bytes(buffer, field_offset)
+            # elif T.is_struct:
+            #     attr = T.from_bytes(buffer, field_offset)
+            # elif T.is_pointer:
+            #     attr = T.from_bytes(buffer, field_offset).dereference(buffer, True)
+            # else:
+            #     raise TypeError(f"Unsupported field type: {T}")
 
             attr = cls._normalize_in(attr, field)
             setattr(obj, field.name, attr)
@@ -129,22 +188,30 @@ class Z64Struct(DataType, StructType):
             attr = getattr(self, field.name)
             attr = self._normalize_out(attr, field)
 
-            T = field.type
-            if issubclass(T, PrimitiveType):
-                b = T.to_bytes(attr)
-            elif issubclass(T, BitfieldType):
-                b = attr.to_bytes(self._bools_, self._enums_)
-            elif issubclass(T, (UnionType, ArrayType, StructType)):
-                b = attr.to_bytes()
-            elif issubclass(T, PointerType):
-                if attr is None:
-                    b = struct.pack('>I', 0x00000000)
-                elif isinstance(attr, T):
-                    b = attr.to_bytes()
-                else:
-                    b = T(obj=attr).to_bytes()
+            T: DataType = field.type
+            for flag, handler in self._TO_BYTES_HANDLERS.items():
+                if getattr(T, flag, False):
+                    b = handler(self, attr, field)
+                    break
             else:
-                raise TypeError(f"Unsupported field type: {T}")
+                raise TypeError(f"Unsupported field type {T}")
+
+            # T: DataType = field.type
+            # if T.is_primitive:
+            #     b = T.to_bytes(attr)
+            # elif T.is_bitfield:
+            #     b = attr.to_bytes(self._bools_, self._enums_)
+            # elif T.is_union or T.is_array or T.is_struct:
+            #     b = attr.to_bytes()
+            # elif T.is_pointer:
+            #     if attr is None:
+            #         b = struct.pack('>I', 0x00000000)
+            #     elif isinstance(attr, T):
+            #         b = attr.to_bytes()
+            #     else:
+            #         b = T(reference=attr).to_bytes()
+            # else:
+            #     raise TypeError(f"Unsupported field type: {T}")
 
             buffer[field.offset:field.offset + len(b)] = b
 
@@ -153,7 +220,7 @@ class Z64Struct(DataType, StructType):
     @classmethod
     def _normalize_in(cls, attr, field: Field):
         """"""
-        if issubclass(field.type, BitfieldType):
+        if field.type.is_bitfield:
             return attr.normalize_in(cls._bools_, cls._enums_)
         if field.bool:
             return bool(attr)
@@ -164,7 +231,7 @@ class Z64Struct(DataType, StructType):
     @classmethod
     def _normalize_out(cls, attr, field: Field):
         """"""
-        if issubclass(field.type, BitfieldType):
+        if field.type.is_bitfield:
             return attr.normalize_out(cls._bools_, cls._enums_)
         if field.bool:
             return 1 if attr else 0
@@ -184,21 +251,37 @@ class Z64Struct(DataType, StructType):
             attr = getattr(self, field.name)
             attr = self._normalize_out(attr, field)
 
-            T = field.type
-            if issubclass(T, PrimitiveType):
-                b = T.to_bytes(attr)
-                buffer.extend(b)
-            elif issubclass(T, BitfieldType):
-                b = attr.to_bytes(self._bools_, self._enums_)
-                buffer.extend(b)
-            elif issubclass(T, (UnionType, ArrayType, StructType)):
-                b = attr.to_bytes()
-                buffer.extend(b)
-            elif issubclass(T, PointerType):
-                b = struct.pack('>I', 0x00000000)
-                buffer.extend(b)
+            T: DataType = field.type
+            if T.is_pointer and isinstance(attr, Z64Struct):
+                b = attr._stable_bytes()
             else:
-                raise TypeError(f"Unsupported field type: {T}")
+                for flag, handler in self._TO_BYTES_HANDLERS.items():
+                    if getattr(T, flag, False):
+                        b = handler(self, attr, field)
+                        break
+                else:
+                    raise TypeError(f"Unsupported field type {T}")
+
+            buffer.extend(b)
+
+            # T: DataType = field.type
+            # if T.is_primitive:
+            #     b = T.to_bytes(attr)
+            #     buffer.extend(b)
+            # elif T.is_bitfield:
+            #     b = attr.to_bytes(self._bools_, self._enums_)
+            #     buffer.extend(b)
+            # elif T.is_union or T.is_array or T.is_struct:
+            #     b = attr.to_bytes()
+            #     buffer.extend(b)
+            # elif T.is_pointer:
+            #     if isinstance(attr, Z64Struct):
+            #         b = attr._stable_bytes()
+            #     else:
+            #         b = struct.pack('>I', 0x00000000)
+            #     buffer.extend(b)
+            # else:
+            #     raise TypeError(f"Unsupported field type: {T}")
 
         return bytes(buffer)
 

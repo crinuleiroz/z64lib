@@ -5,7 +5,12 @@ from z64lib.types.markers import *
 
 class DynaStruct(Z64Struct):
     """ Dynamic-sized Zelda64 struct. """
-    is_dyna = True
+    # Type Flags
+    is_struct: bool = True
+
+    # Static/Dynamic Flags
+    is_static: bool = True
+    is_dyna: bool = False
 
     def _generate_layout(self) -> list[Field]:
         offset = 0

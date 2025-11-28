@@ -6,10 +6,24 @@ class DataType:
     """ Base class all struct types inherit their properties from. """
     format: str = None
     signed: bool = False
+    _struct: struct.Struct = None
+
+    # Bit Width and Min/Max
     BITS: int = None
     MIN: int = None
     MAX: int = None
-    _struct: struct.Struct = None
+
+    # Type flags
+    is_primitive: bool = False
+    is_bitfield: bool = False
+    is_union: bool = False
+    is_array: bool = False
+    is_struct: bool = False
+    is_pointer: bool = False
+
+    # Static/Dynamic Flags
+    is_static: bool = True
+    is_dyna: bool = False
 
     @classmethod
     def size(cls) -> int:
@@ -24,15 +38,17 @@ class DataType:
         if len(buffer) - offset < cls.size():
             raise ValueError(f"Buffer too small for {cls.__name__}: need {cls.size()} bytes, got {len(buffer) - offset}")
 
-        # Standard types
-        s = cls._get_struct()
-        if s is not None:
-            ret = s.unpack_from(buffer, offset)[0]
-            return cls(ret)
+        if issubclass(cls, int):
+            data = int.from_bytes(buffer[offset:offset + cls.size()], 'big', signed=cls.signed)
+        elif issubclass(cls, float):
+            s = cls._get_struct()
+            if s is None:
+                raise TypeError(f"Cannot parse float type {cls.__name__} without a struct format")
+            data = s.unpack_from(buffer, offset)[0]
+        else:
+            raise TypeError(f"Cannot parse unknown type {cls.__name__}")
 
-        # Non-standard types
-        ret = int.from_bytes(buffer[offset:offset + cls.size()], 'big', signed=cls.signed)
-        return cls(ret)
+        return cls(data)
 
     @classmethod
     def to_bytes(cls, value) -> bytes:

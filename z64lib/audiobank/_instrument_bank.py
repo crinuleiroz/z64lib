@@ -9,7 +9,7 @@ from z64lib.core.allocation import MemoryAllocator
 
 @dataclass
 class BankPointer:
-    addr: int = 0
+    address: int = 0
 
 
 class InstrumentBank:
@@ -155,26 +155,27 @@ class InstrumentBank:
         self._assign_addresses(allocator)
 
         # Create the buffer
-        buffer = bytearray(allocator.align_to(allocator.addr, 0x10))
+        buffer = bytearray(allocator.align_to(allocator.address, 0x10))
 
         # Write drum list and effect list pointers
         struct.pack_into('>2I', buffer, 0x00,
-                         self._drum_list.addr,
-                         self._effect_list.addr)
+                         self._drum_list.address,
+                         self._effect_list.address)
 
         # Write pointer lists
         for i, instrument in enumerate(self.instruments):
-            struct.pack_into('>I', buffer, self._instrument_list.addr + (i * 4),
-                             instrument._address if instrument else 0) # _address is assigned in MemoryAllocator.reserve_mem()
+            print(f"Instrument {i}: hash={instrument.get_hash():x}" if instrument else None)
+            struct.pack_into('>I', buffer, self._instrument_list.address + (i * 4),
+                             getattr(instrument, 'allocated_address', 0)) # allocated_address is assigned in MemoryAllocator.reserve_mem()
 
         for i, drum in enumerate(self.drums):
-            struct.pack_into('>I', buffer, self._drum_list.addr + (i * 4),
-                             drum._address if drum else 0) # _address is assigned in MemoryAllocator.reserve_mem()
+            struct.pack_into('>I', buffer, self._drum_list.address + (i * 4),
+                             getattr(drum, 'allocated_address', 0)) # allocated_address is assigned in MemoryAllocator.reserve_mem()
 
         for i, effect in enumerate(self.effects):
             if effect is None:
                 continue
-            start = self._effect_list.addr + (i * 8)
+            start = self._effect_list.address + (i * 8)
             buffer[start:start + 8] = effect.to_bytes()
 
         # Write structs
@@ -289,30 +290,30 @@ class InstrumentBank:
         # The position of the instrument list is fixed after the first two
         # pointers (drum list and effect list pointers).
         self._instrument_list = BankPointer()
-        self._instrument_list.addr = 0x00000008
+        self._instrument_list.address = 0x00000008
 
         # Drum List
         # The position of the drum list can be anywhere in the bank, here
         # it is placed right after the instrument list.
         self._drum_list = BankPointer()
         if len(self.drums) > 0:
-            self._drum_list.addr = allocator.align_to(self._instrument_list.addr + (len(self.instruments) * 4), 0x10)
+            self._drum_list.address = allocator.align_to(self._instrument_list.address + (len(self.instruments) * 4), 0x10)
         else:
-            self._drum_list.addr = 0
+            self._drum_list.address = 0
 
         # Effect List
         # The position of the effect list can be anywhere in the bank, here
         # it is placed right after the drum list.
         self._effect_list = BankPointer()
         if len(self.effects) > 0:
-            self._effect_list.addr = allocator.align_to(self._drum_list.addr + (len(self.drums) * 4), 0x10)
+            self._effect_list.address = allocator.align_to(self._drum_list.address + (len(self.drums) * 4), 0x10)
 
         # Calulate data address
-        allocator.addr = allocator.align_to(
+        allocator.address = allocator.align_to(
             max(
-                self._instrument_list.addr + (len(self.instruments) * 4),
-                self._drum_list.addr + (len(self.drums) * 4) if self._drum_list.addr > 0 else 0,
-                self._effect_list.addr + (len(self.effects) * 8) if self._effect_list.addr > 0 else 0,
+                self._instrument_list.address + (len(self.instruments) * 4),
+                self._drum_list.address + (len(self.drums) * 4) if self._drum_list.address > 0 else 0,
+                self._effect_list.address + (len(self.effects) * 8) if self._effect_list.address > 0 else 0,
             ),
             0x10
         )
