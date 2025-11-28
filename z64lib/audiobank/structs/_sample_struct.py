@@ -57,11 +57,11 @@ class Sample(Z64Struct):
         ('book', pointer[VadpcmBook])
     ]
     # _align_ = 0x10
-    _bool_fields_ = [
+    _bools_ = {
         'is_cached',
         'is_relocated'
-    ]
-    _enum_fields_ = {
+    }
+    _enums_ = {
         'codec': AudioSampleCodec,
         'medium': AudioStorageMedium
     }

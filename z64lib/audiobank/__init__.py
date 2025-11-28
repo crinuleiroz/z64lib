@@ -10,8 +10,8 @@ from ._audiobank_index import AudiobankIndex
 from ._audiobank import Audiobank
 
 __all__ = [
-    "AudiobankIndexEntry",
-    "InstrumentBank",
-    "AudiobankIndex",
-    "Audiobank",
+    'AudiobankIndexEntry',
+    'InstrumentBank',
+    'AudiobankIndex',
+    'Audiobank',
 ]

@@ -26,4 +26,4 @@ def safe_enum(enum_cls, value: int):
     try:
         return enum_cls(value)
     except ValueError as e:
-        raise ValueError(f'Invalid value {value} for enum {enum_cls.__name__}')
+        raise ValueError(f"Invalid value {value} for enum {enum_cls.__name__}")

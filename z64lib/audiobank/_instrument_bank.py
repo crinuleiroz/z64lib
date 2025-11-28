@@ -342,24 +342,24 @@ class InstrumentBank:
     #endregion
 
     def __repr__(self):
-        lines = [f'{type(self).__name__}(']
+        lines = [f"{type(self).__name__}("]
 
-        lines.append(f'  index_entry={repr(self.index_entry).replace('\n', '\n    ')}')
+        lines.append(f"  index_entry={repr(self.index_entry).replace('\n', '\n    ')}")
 
         def format_list(name, items):
             if not items:
-                return f'  {name}=[]'
+                return f"  {name}=[]"
             lines_list = []
             for item in items:
                 if item is None:
-                    lines_list.append('None')
+                    lines_list.append("None")
                 else:
                     lines_list.append(repr(item).replace('\n', '\n    '))
-            return f'  {name}=[\n    ' + ',\n    '.join(lines_list) + '\n  ]'
+            return f"  {name}=[\n    " + ',\n    '.join(lines_list) + "\n  ]"
 
         lines.append(format_list('instruments', self.instruments))
         lines.append(format_list('drums', self.drums))
         lines.append(format_list('effects', self.effects))
 
-        lines.append(')')
+        lines.append(")")
         return '\n'.join(lines)

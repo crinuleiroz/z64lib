@@ -27,28 +27,28 @@ class union(DataType, UnionType):
             },
         )
 
-    def __init__(self, **values):
-        self._values = {}
+    def __init__(self, **attrs):
+        self._attrs = {}
 
-        for name, data_type in self.fields:
-            if name in values:
-                self._values[name] = values[name]
+        for name, _data_type in self.fields:
+            if name in attrs:
+                self._attrs[name] = attrs[name]
             else:
-                self._values[name] = None
+                self._attrs[name] = None
 
-        self._active = next(iter(self._values))
+        self._active = next(iter(self._attrs))
 
     def __getattr__(self, name):
-        if name in self._values:
-            return self._values[name]
+        if name in self._attrs:
+            return self._attrs[name]
         raise AttributeError(name)
 
     def __setattr__(self, name, value):
         if name in ('_values', '_active', 'fields'):
             return super().__setattr__(name, value)
 
-        if name in self._values:
-            self._values[name] = value
+        if name in self._attrs:
+            self._attrs[name] = value
             self._active = name
         else:
             raise AttributeError(f"Invalid union field '{name}'")
@@ -63,33 +63,33 @@ class union(DataType, UnionType):
     def from_bytes(cls, buffer: bytes, offset: int):
         size = cls.size()
         raw = buffer[offset:offset + size]
-        values = {}
+        attrs = {}
 
         for name, data_type in cls.fields:
-            values[name] = data_type.from_bytes(raw, 0)
+            attrs[name] = data_type.from_bytes(raw, 0)
 
-        return cls(**values)
+        return cls(**attrs)
 
     def to_bytes(self) -> bytes:
         name = self._active
         data_type = dict(self.fields)[name]
-        value = self._values[name]
+        attr = self._attrs[name]
 
-        raw = data_type.to_bytes(value)
+        buffer = data_type.to_bytes(attr)
         size = type(self).size()
 
-        if len(raw) < size:
-            return raw + b'\x00' * (size - len(raw))
-        elif len(raw) > size:
-            return raw[:size]
-        return raw
+        if len(buffer) < size:
+            return buffer + b'\x00' * (size - len(buffer))
+        elif len(buffer) > size:
+            return buffer[:size]
+        return buffer
 
     @property
     def active_field(self) -> str:
         return self._active
 
     def set_active(self, name: str):
-        if name not in self._values:
+        if name not in self._attrs:
             raise ValueError()
         self._active = name
 
@@ -97,12 +97,12 @@ class union(DataType, UnionType):
         cls_name = type(self).__name__
         parts = []
 
-        for name in self._values:
-            v = self._values[name]
+        for name in self._attrs:
+            v = self._attrs[name]
             if name == self._active:
                 parts.append(f"{name}={v!r} (active)")
             else:
                 parts.append(f"{name}={v!r}")
 
-        inside = ", ".join(parts)
+        inside = ', '.join(parts)
         return f"{cls_name}({inside})"

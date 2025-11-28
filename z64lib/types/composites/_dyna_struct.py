@@ -1,34 +1,36 @@
 from ._z64_struct import Z64Struct
+from z64lib.types.base import Field
 from z64lib.types.markers import *
 
 
 class DynaStruct(Z64Struct):
-    """
-    Base class for dynamically sized Zelda64 structs.
-    Automatically computes size based on content.
-    """
+    """ Dynamic-sized Zelda64 struct. """
+    is_dyna = True
+
+    def _generate_layout(self) -> list[Field]:
+        offset = 0
+        layout = []
+
+        for name, data_type in self._fields_:
+            attr = getattr(self, name, None)
+            field, offset = self._describe_field(name, data_type, offset, attr)
+
+            layout.append(field)
+
+        if self._align_ > 1:
+            offset = self.align_to(offset, self._align_)
+
+        return layout
+
     def size(self) -> int:
-        obj = self
+        """"""
+        layout = self._generate_layout()
+        if not layout:
+            return 0
 
-        def callback(name, data_type, offset):
-            value = getattr(obj, name, None)
+        size = max(field.offset + field.size for field in layout)
 
-            # Struct
-            if isinstance(value, Z64Struct):
-                return offset + value.size()
+        if self._align_ > 1:
+            size = self.align_to(size, self._align_)
 
-            # Bitfield
-            if issubclass(data_type, BitfieldType):
-                return offset + data_type.size()
-
-            # Array
-            if issubclass(data_type, ArrayType):
-                if value is not None:
-                    return offset + len(value) * data_type.data_type.size()
-                return offset + (data_type.size() if data_type.length is not None else 0)
-
-            # Primtive, Pointer
-            return offset + data_type.size()
-
-        offset = self.walk_fields(self._fields_, callback)
-        return self.align_to(offset, getattr(self, '_align_', 1))
+        return size

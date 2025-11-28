@@ -12,9 +12,9 @@ from ._structs import (
 )
 
 __all__ = [
-    "EnvelopePoint",
-    "ReverbSettings",
-    "AudioSpec",
-    "TempoData",
-    "AudioHeapInitSizes"
+    'EnvelopePoint',
+    'ReverbSettings',
+    'AudioSpec',
+    'TempoData',
+    'AudioHeapInitSizes'
 ]

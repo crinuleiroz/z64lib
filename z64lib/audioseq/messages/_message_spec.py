@@ -315,13 +315,13 @@ class GenericMessage(AseqMessage):
         parts = []
 
         if hasattr(self, 'arg_bits') and self.arg_bits is not None:
-            parts.append(f'arg_bits=0x{self.arg_bits:X}')
+            parts.append(f"arg_bits=0x{self.arg_bits:X}")
         if self.args:
-            parts += [f'{a.__class__.__name__.lower()}=0x{a.value:X}' for a in self.args]
+            parts += [f"{a.__class__.__name__.lower()}=0x{a.value:X}" for a in self.args]
         if parts:
-            return f'{cls_name}({', '.join(parts)})'
+            return f"{cls_name}({', '.join(parts)})"
 
-        return f'{cls_name}(opcode=0x{self.opcode:X})'
+        return f"{cls_name}(opcode=0x{self.opcode:X})"
 
 
 class ArgMessage(GenericMessage):
@@ -419,13 +419,13 @@ class AseqMessageSpec:
         # the note modes in Zelda64 handle the defaults at the
         # metadata/channel/layer level instead of globally.
         if section == AseqSection.LAYER and opcode < 0xC0:
-            if frag is not None and hasattr(frag, "is_legato"):
+            if frag is not None and hasattr(frag, 'is_legato'):
                 is_legato = frag.is_legato
 
                 # If legato, remove staccato, and vice versa
                 filtered = [
                     c for c in candidates
-                    if getattr(c, "is_legato_type", None) == is_legato
+                    if getattr(c, 'is_legato_type', None) == is_legato
                 ]
 
                 if filtered:

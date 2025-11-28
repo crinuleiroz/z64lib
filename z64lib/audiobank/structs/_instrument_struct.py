@@ -52,7 +52,7 @@ class Instrument(Z64Struct):
         ('prim_region_sample', TunedSample),
         ('high_region_sample', TunedSample),
     ]
-    _bool_fields_ = [
+    _bools_ = {
         'is_relocated'
-    ]
+    }
     # _align_ = 0x10

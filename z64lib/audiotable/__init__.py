@@ -7,5 +7,5 @@ z64lib.audio.audiotable
 from ._audiotable_index_entry import AudiotableIndexEntry
 
 __all__ = [
-    "AudiotableIndexEntry",
+    'AudiotableIndexEntry',
 ]

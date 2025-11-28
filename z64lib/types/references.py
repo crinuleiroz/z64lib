@@ -6,8 +6,8 @@ from z64lib.types.markers import PointerType
 class pointer(DataType, PointerType):
     """ An unsigned 32-bit integer that indicates an offset to a new structure in the binary data. """
     _DEPTH_MAP = {
-        "single": 1,
-        "double": 2,
+        'single': 1,
+        'double': 2,
     }
 
     data_type: DataType = None
@@ -19,7 +19,7 @@ class pointer(DataType, PointerType):
             data_type, depth = params, 1
         else:
             if len(params) != 2:
-                raise TypeError("pointer[...] must be pointer[T] or pointer[T, depth]")
+                raise TypeError("Pointer type must be pointer[T] or pointer[T, depth]")
             data_type, depth = params
 
         if isinstance(depth, str):
@@ -64,7 +64,7 @@ class pointer(DataType, PointerType):
         addr = struct.unpack_from('>I', buffer, offset)[0]
         return cls(addr=addr)
 
-    def deref(self, buffer: bytes):
+    def dereference(self, buffer: bytes):
         if self.addr == 0 or self.addr >= len(buffer):
             self.obj = None
         elif self.pointer_depth == 1:
@@ -84,5 +84,5 @@ class pointer(DataType, PointerType):
 
 
 __all__ = [
-    "pointer",
+    'pointer',
 ]

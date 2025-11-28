@@ -21,19 +21,19 @@ from ._aseq_version import AseqVersion
 from ._aseq_sections import AseqSection
 
 __all__ = [
-    "NamedIntEnum",
-    "SoundSetting",
-    "SoundOutputMode",
-    "AudioSampleCodec",
-    "AudioStorageMedium",
-    "AudioCacheType",
-    "AudioCacheLoadType",
-    "AdsrStatus",
-    "AdsrOpcode",
-    "VadpcmLoopCount",
-    "AudiotableType",
-    "AudioLoadStatus",
-    "AudioManagerDebugLevel",
-    "AseqVersion",
-    "AseqSection"
+    'NamedIntEnum',
+    'SoundSetting',
+    'SoundOutputMode',
+    'AudioSampleCodec',
+    'AudioStorageMedium',
+    'AudioCacheType',
+    'AudioCacheLoadType',
+    'AdsrStatus',
+    'AdsrOpcode',
+    'VadpcmLoopCount',
+    'AudiotableType',
+    'AudioLoadStatus',
+    'AudioManagerDebugLevel',
+    'AseqVersion',
+    'AseqSection'
 ]

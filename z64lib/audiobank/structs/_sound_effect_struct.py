@@ -17,5 +17,5 @@ class SoundEffect(Z64Struct):
         Pointless TunedSample wrapping found in ZeldaRET's codebase.
     """
     _fields_ = [
-        ("tuned_sample", TunedSample)
+        ('tuned_sample', TunedSample)
     ]

@@ -6,9 +6,9 @@ from ._dyna_struct import DynaStruct
 
 
 __all__ = [
-    "array",
-    "bitfield",
-    "union",
-    "Z64Struct",
-    "DynaStruct",
+    'array',
+    'bitfield',
+    'union',
+    'Z64Struct',
+    'DynaStruct',
 ]

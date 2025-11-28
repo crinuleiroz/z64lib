@@ -10,7 +10,7 @@ from ._class_helpers import make_property
 
 
 __all__ = [
-    "sign_extend",
-    "safe_enum",
-    "make_property",
+    'sign_extend',
+    'safe_enum',
+    'make_property',
 ]

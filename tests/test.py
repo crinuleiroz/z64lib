@@ -11,13 +11,13 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 # ============== #
 
 # Types
-TEST_TYPES: bool = True
+TEST_TYPES: bool = False
 
 # Instrument Bank
-TEST_BANK: bool = False
-BANK_TEST_TARGET: str = "instrument" # "instrument" / "drum" / "effect"
+TEST_BANK: bool = True
+BANK_TEST_TARGET: str = 'instrument' # 'instrument' / 'drum' / 'effect'
 PRINT_BANK_TEST_TARGET: bool = True
-WRITE_BANK: bool = False
+WRITE_BANK: bool = True
 
 # Audio Sequence
 TEST_ASEQ: bool = False
@@ -31,13 +31,13 @@ CLEAN_PYCACHE_FOLDERS: bool = True
 # Base directory of this script
 BASE_DIR = Path(__file__).resolve().parent
 
-# Paths to binary test files in "tests/"
-TABLE_ENTRY: Path = BASE_DIR / "bin" / "3.bankmeta"
-BANK_DATA: Path =  BASE_DIR / "bin" / "3.zbank"
-AUDIO_SEQUENCE: Path = BASE_DIR / "bin" / "mm-battle.seq"
-MUSIC_METADATA_FILE: Path = BASE_DIR / "music" / "test_metadata.mmrs"
-OOTRS_FILE: Path = BASE_DIR / "music" / "test_ootrs.ootrs"
-MMRS_FILE: Path = BASE_DIR / "music" / "test_mmrs.mmrs"
+# Paths to binary test files in 'tests/'
+TABLE_ENTRY: Path = BASE_DIR / 'bin' / '3.bankmeta'
+BANK_DATA: Path =  BASE_DIR / 'bin' / '3.zbank'
+AUDIO_SEQUENCE: Path = BASE_DIR / 'bin' / 'mm-battle.seq'
+MUSIC_METADATA_FILE: Path = BASE_DIR / 'music' / 'test_metadata.mmrs'
+OOTRS_FILE: Path = BASE_DIR / 'music' / 'test_ootrs.ootrs'
+MMRS_FILE: Path = BASE_DIR / 'music' / 'test_mmrs.mmrs'
 
 # =========== #
 #  TEST DATA  #
@@ -47,7 +47,7 @@ MMRS_FILE: Path = BASE_DIR / "music" / "test_mmrs.mmrs"
 if TEST_TYPES:
     from z64lib.types import *
 
-    print(f'value={s16(0xFFFF)}', f'min={s16.MIN}', f'max={s16.MAX}, bytes={s16.to_bytes(0xFFFF)}')
+    print(f"value={s16(0xFFFF)}", f"min={s16.MIN}", f"max={s16.MAX}, bytes={s16.to_bytes(0xFFFF)}")
 
 
 # Audiobank Testing
@@ -63,11 +63,11 @@ if TEST_BANK:
     if PRINT_BANK_TEST_TARGET:
         # Test target selection
         match BANK_TEST_TARGET.lower():
-            case "instrument":
+            case 'instrument':
                 items = bank.instruments
-            case "drum":
+            case 'drum':
                 items = bank.drums
-            case "effect":
+            case 'effect':
                 items = bank.effects
             case _:
                 items = None

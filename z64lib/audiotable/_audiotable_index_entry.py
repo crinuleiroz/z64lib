@@ -45,7 +45,7 @@ class AudiotableIndexEntry(Z64Struct):
         ('short_data_2', s16),
         ('short_data_3', s16),
     ]
-    _enum_fields_ = {
+    _enums_ = {
         'medium': AudioStorageMedium,
         'cache_load_type': AudioCacheLoadType
     }

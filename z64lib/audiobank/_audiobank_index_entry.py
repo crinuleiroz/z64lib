@@ -1,5 +1,4 @@
 from z64lib.core.enums import AudioStorageMedium, AudioCacheLoadType
-from z64lib.core.helpers import safe_enum
 from z64lib.types import *
 
 
@@ -55,7 +54,7 @@ class AudiobankIndexEntry(Z64Struct):
         ('num_drums', u8),
         ('num_effects', s16)
     ]
-    _enum_fields_ = {
+    _enums_ = {
         'medium': AudioStorageMedium,
         'cache_load_type': AudioCacheLoadType
     }

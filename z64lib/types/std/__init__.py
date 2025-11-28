@@ -7,6 +7,7 @@ from ._uint32_t import u32
 from ._int64_t import s64
 from ._uint64_t import u64
 from ._float import f32
+from ._double import f64
 
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "u64",
     # Float
     "f32",
+    "f64",
 ]

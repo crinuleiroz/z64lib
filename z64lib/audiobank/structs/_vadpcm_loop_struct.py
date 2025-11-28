@@ -32,7 +32,7 @@ class VadpcmLoopHeader(Z64Struct):
         ('loop_count', u32),
         ('num_samples', u32)
     ]
-    _enum_fields_ = {
+    _enums_ = {
         'loop_count': VadpcmLoopCount
     }
 
@@ -60,33 +60,40 @@ class VadpcmLoop(DynaStruct):
         ('predictors', array[s16])
     ]
 
+    def __init__(self, header=None, predictors=None):
+        self.header = header or VadpcmLoopHeader()
+        self.predictors = predictors or array[s16]([])
+
     # Override because the array is conditional based on header values
     @classmethod
-    def from_bytes(cls, buffer: bytes, struct_addr:int = 0) -> 'VadpcmLoop':
-        obj = cls.__new__(cls)
-        obj.header = VadpcmLoopHeader.from_bytes(buffer, struct_addr)
-        header_size = obj.header.size()
+    def from_bytes(cls, buffer: bytes, offset:int = 0) -> 'VadpcmLoop':
+        header = VadpcmLoopHeader.from_bytes(buffer, offset)
 
-        if obj.header.loop_start == 0:
-            obj.predictors = array[s16]([])
-        else:
-            obj.predictors = array[s16].from_bytes(buffer, struct_addr + header_size, 16)
+        is_loop = (
+            header.loop_start != 0
+            and header.loop_count is not VadpcmLoopCount.NO_LOOP
+        )
 
-        return obj
+        p_offset = offset + header.size()
+        predictors = (
+            array[s16].from_bytes(buffer, p_offset, 16)
+            if is_loop else array[s16]([])
+        )
+        return cls(header, predictors)
 
     def __repr__(self):
         header_repr = repr(self.header).replace('\n', '\n  ')
         if not self.predictors or len(self.predictors) == 0:
-            preds = '[]'
+            preds = "[]"
         else:
             grouped = [
-                ', '.join(f'{v}' for v in self.predictors[i:i+4])
+                ', '.join(f"{v}" for v in self.predictors[i:i+4])
                 for i in range(0, len(self.predictors), 4)
             ]
-            preds = '[\n' + '\n'.join(f'    {line},' for line in grouped) + '\n  ]'
+            preds = "[\n" + '\n'.join(f"    {line}," for line in grouped) + "\n  ]"
         return (
-            f'{type(self).__name__}(\n'
-            f'  header={header_repr}\n'
-            f'  predictors={preds}\n'
-            f')'
+            f"{type(self).__name__}(\n"
+            f"  header={header_repr}\n"
+            f"  predictors={preds}\n"
+            f")"
         )

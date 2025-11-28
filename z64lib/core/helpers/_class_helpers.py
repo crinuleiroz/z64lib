@@ -19,7 +19,7 @@ def make_property(raw_attr_name: str, transform):
         Returns the created class property.
     """
     def getter(self):
-        return transform(getattr(self, f"_{raw_attr_name}_raw"))
+        return transform(getattr(self, f'_{raw_attr_name}_raw'))
 
     def setter(self, value):
         setattr(self, f'_{raw_attr_name}_raw', value)

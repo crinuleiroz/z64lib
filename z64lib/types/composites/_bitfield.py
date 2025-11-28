@@ -15,7 +15,6 @@ class bitfield(DataType, BitfieldType):
     fields: list[tuple[str, int]] = None
 
     def __class_getitem__(cls, params):
-        """"""
         if not isinstance(params, tuple):
             data_type = params
             fields = None
@@ -37,8 +36,8 @@ class bitfield(DataType, BitfieldType):
             },
         )
 
-    def __init__(self, **values):
-        self.__dict__.update(values)
+    def __init__(self, **attrs):
+        self.__dict__.update(attrs)
 
     @property
     def signed(self):
@@ -46,25 +45,29 @@ class bitfield(DataType, BitfieldType):
 
     @classmethod
     def size(cls):
+        """"""
         return cls.data_type.size()
 
     @classmethod
     def _is_signed(cls) -> bool:
+        """"""
         return getattr(cls.data_type, 'signed', False)
 
     @classmethod
     def _fmt(cls) -> str:
+        """"""
         return cls._FMT_MAP[cls.size()][1 if cls._is_signed() else 0]
 
     @classmethod
-    def from_bytes(cls, buffer: bytes, offset: int):
+    def from_bytes(cls, buffer: bytes, offset: int, bools: set[str] = None, enums: dict[str, type] = None):
+        """"""
         fmt = cls._fmt()
         raw = struct.unpack_from(fmt, buffer, offset)[0]
 
-        bit_cursor = 0
-        values = {}
-
         total_bits = cls.size() * 8
+        bit_cursor = 0
+        attrs = {}
+
         sum_of_widths = sum(width for _, width in cls.fields)
         if sum_of_widths != total_bits:
             raise ValueError(
@@ -77,41 +80,76 @@ class bitfield(DataType, BitfieldType):
         for name, width in cls.fields:
             shift = total_bits - bit_cursor - width
             mask = (1 << width) - 1
-            value = (raw >> shift) & mask
+            attr = (raw >> shift) & mask
 
-            if cls._is_signed() and (value & (1 << (width - 1))):
-                value -= (1 << width)
+            if cls._is_signed() and (attr & (1 << (width - 1))):
+                attr -= (1 << width)
 
-            values[name] = value
+            attrs[name] = attr
             bit_cursor += width
 
-        return cls(**values)
+        obj = cls(**attrs)
+        obj.normalize_in(bools, enums)
 
-    def to_bytes(self):
+        return obj
+
+    def to_bytes(self, bools: set[str] = None, enums: dict[str, type] = None):
+        """"""
+        self.normalize_out(bools, enums)
         fmt = self._fmt()
+
+        total_bits = self.data_type.size() * 8
         bits = 0
         bit_cursor = 0
-        total_bits = self.data_type.size() * 8
 
         for name, width in self.fields:
-            val = getattr(self, name)
-
-            if isinstance(val, bool):
-                val = 1 if val else 0
-            if isinstance(val, IntEnum):
-                val = val.value
+            attr = getattr(self, name)
 
             mask = (1 << width) - 1
             shift = total_bits - bit_cursor - width
-            bits |= (val & mask) << shift
+            bits |= (attr & mask) << shift
             bit_cursor += width
 
         return struct.pack(fmt, bits)
 
+    def normalize_in(self, bools: set[str] = None, enums: dict[str, type] = None):
+        """"""
+        bools = bools or set()
+        enums = enums or dict()
+
+        for name, _width in self.fields:
+            attr = getattr(self, name)
+            enum_cls = enums.get(name)
+
+            if name in bools:
+                setattr(self, name, bool(attr))
+            if enum_cls and not isinstance(attr, enum_cls):
+                setattr(self, name, enum_cls(attr))
+
+        return self
+
+    def normalize_out(self, bools: set[str] = None, enums: dict[str, type] = None):
+        """"""
+        bools = bools or set()
+        enums = enums or dict()
+
+        for name, _width in self.fields:
+            attr = getattr(self, name)
+            enum_cls = enums.get(name)
+
+            if name in bools:
+                setattr(self, name, 1 if attr else 0)
+            if enum_cls and isinstance(attr, enum_cls):
+                setattr(self, name, attr.value)
+
+        return self
+
     def __repr__(self):
         field_parts = []
+
         for name, _bits in self.fields:
-            val = getattr(self, name)
-            field_parts.append(f'{name}={val}')
+            attr = getattr(self, name)
+            field_parts.append(f"{name}={attr}")
+
         inside = ', '.join(field_parts)
-        return f'{type(self).__name__}({inside})'
+        return f"{type(self).__name__}({inside})"

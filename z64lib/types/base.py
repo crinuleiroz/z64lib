@@ -9,6 +9,7 @@ class DataType:
     BITS: int = None
     MIN: int = None
     MAX: int = None
+    _struct: struct.Struct = None
 
     @classmethod
     def size(cls) -> int:
@@ -21,11 +22,12 @@ class DataType:
     def from_bytes(cls, buffer: bytes, offset: int):
         """"""
         if len(buffer) - offset < cls.size():
-            raise ValueError(f'Buffer too small for {cls.__name__}: need {cls.size()} bytes, got {len(buffer) - offset}')
+            raise ValueError(f"Buffer too small for {cls.__name__}: need {cls.size()} bytes, got {len(buffer) - offset}")
 
         # Standard types
-        if cls.format is not None:
-            ret = struct.unpack_from(cls.format, buffer, offset)[0]
+        s = cls._get_struct()
+        if s is not None:
+            ret = s.unpack_from(buffer, offset)[0]
             return cls(ret)
 
         # Non-standard types
@@ -36,14 +38,15 @@ class DataType:
     def to_bytes(cls, value) -> bytes:
         """"""
         if value < cls.MIN or value > cls.MAX:
-            raise OverflowError(f'Value {value} out of range for {cls.__name__} [{cls.MIN}, {cls.MAX}]')
+            raise OverflowError(f"Value {value} out of range for {cls.__name__} [{cls.MIN}, {cls.MAX}]")
 
         # Standard types
-        if cls.format is not None:
+        s = cls._get_struct()
+        if s is not None:
             if issubclass(cls, int):
-                return struct.pack(cls.format, int(value))
+                return s.pack(int(value))
             if issubclass(cls, float):
-                return struct.pack(cls.format, float(value))
+                return s.pack(float(value))
             raise TypeError(f"Unsupported type {cls.__name__}")
 
         # Non-standard types
@@ -56,6 +59,15 @@ class DataType:
         if cls.signed and bitmask >= (1 << (cls.BITS - 1)):
             bitmask -= (1 << cls.BITS)
         return bitmask
+
+    @classmethod
+    def _get_struct(cls) -> struct.Struct | None:
+        """"""
+        if cls.format is None:
+            return None
+        if cls._struct is None:
+            cls._struct = struct.Struct(cls.format)
+        return cls._struct
 
     #region Alignment Helpers
     @staticmethod
@@ -104,3 +116,24 @@ class DataType:
         """ Return the offset aligned for this field type. """
         return cls.align_to(offset, cls.natural_alignment(data_type))
     #endregion
+
+
+class Field:
+    __slots__ = (
+        'name',
+        'type',
+        'offset',
+        'size',
+        'kind',
+        'enum',
+        'bool',
+    )
+
+    def __init__(self, name, type, offset, size, kind, enum, bool):
+        self.name = name
+        self.type = type
+        self.offset = offset
+        self.size = size
+        self.kind = kind
+        self.enum = enum
+        self.bool = bool

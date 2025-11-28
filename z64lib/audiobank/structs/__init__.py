@@ -15,14 +15,14 @@ from ._sound_effect_struct import SoundEffect
 
 
 __all__ = [
-    "Envelope",
-    "VadpcmBookHeader",
-    "VadpcmBook",
-    "VadpcmLoopHeader",
-    "VadpcmLoop",
-    "Sample",
-    "TunedSample",
-    "Instrument",
-    "Drum",
-    "SoundEffect",
+    'Envelope',
+    'VadpcmBookHeader',
+    'VadpcmBook',
+    'VadpcmLoopHeader',
+    'VadpcmLoop',
+    'Sample',
+    'TunedSample',
+    'Instrument',
+    'Drum',
+    'SoundEffect',
 ]

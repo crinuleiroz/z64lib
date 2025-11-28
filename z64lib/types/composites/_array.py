@@ -14,10 +14,10 @@ class array(DataType, ArrayType):
             length = None
         else:
             if len(params) != 2:
-                raise TypeError('array[...] must be array[T] or array[T, length]')
+                raise TypeError("Array type must be array[T] or array[T, length]")
             data_type, length = params
             if length is not None and (not isinstance(length, int) or length < 0):
-                raise TypeError('length must be a positive integer')
+                raise TypeError("Array length must be a positive integer")
 
         return type(
             f'array_{data_type.__name__}_{length}',
@@ -52,8 +52,9 @@ class array(DataType, ArrayType):
 
     @classmethod
     def size(cls):
+        """"""
         if cls.length is None:
-            raise TypeError('Dynamic array has no static size.')
+            raise TypeError("Dynamic array has no static size")
         return cls.data_type.size() * cls.length
 
     @classmethod
@@ -61,7 +62,7 @@ class array(DataType, ArrayType):
         """"""
         if cls.length is None:
             if length is None:
-                raise TypeError('Dynamic array requires a length argument.')
+                raise TypeError("Dynamic array requires a length argument")
             actual_len = length
         else:
             actual_len = cls.length
@@ -76,8 +77,18 @@ class array(DataType, ArrayType):
 
         return cls(items)
 
+    def dyna_size(self):
+        """"""
+        return len(self.items) * self.data_type.size()
+
     def to_bytes(self):
-        data = bytearray()
+        """"""
+        data = bytearray(self.dyna_size())
+        offset = 0
+
         for v in self.items:
-            data += self.data_type.to_bytes(v)
+            b = self.data_type.to_bytes(v)
+            data[offset:offset + len(b)] = b
+            offset += len(b)
+
         return bytes(data)
