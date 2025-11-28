@@ -164,7 +164,6 @@ class InstrumentBank:
 
         # Write pointer lists
         for i, instrument in enumerate(self.instruments):
-            print(f"Instrument {i}: hash={instrument.get_hash():x}" if instrument else None)
             struct.pack_into('>I', buffer, self._instrument_list.address + (i * 4),
                              getattr(instrument, 'allocated_address', 0)) # allocated_address is assigned in MemoryAllocator.reserve_mem()
 
