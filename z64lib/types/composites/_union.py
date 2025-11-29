@@ -59,12 +59,14 @@ class union(DataType, UnionType):
 
     @classmethod
     def size(cls):
+        """"""
         if cls.max_size is not None:
             return cls.max_size
         return max(data_type.size() for (_, data_type) in cls.fields)
 
     @classmethod
     def from_bytes(cls, buffer: bytes, offset: int):
+        """"""
         size = cls.size()
         raw = buffer[offset:offset + size]
         attrs = {}
@@ -75,6 +77,7 @@ class union(DataType, UnionType):
         return cls(**attrs)
 
     def to_bytes(self) -> bytes:
+        """"""
         name = self._active
         data_type = dict(self.fields)[name]
         attr = self._attrs[name]
@@ -93,6 +96,7 @@ class union(DataType, UnionType):
         return self._active
 
     def set_active(self, name: str):
+        """"""
         if name not in self._attrs:
             raise ValueError()
         self._active = name

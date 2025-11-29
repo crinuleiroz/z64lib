@@ -1,6 +1,6 @@
 import hashlib
-import struct
-from z64lib.types.base import DataType, Field
+import warnings
+from z64lib.types.base import DataType, Field, FROM_BYTES_HANDLERS, TO_BYTES_HANDLERS
 from z64lib.types.markers import *
 
 
@@ -15,30 +15,7 @@ class Z64Struct(DataType, StructType):
     _enums_: dict[str, type] = dict() # Dictionary of field name and enum class
     _align_: int = 1
     _layout_: list = None
-    _struct_size_: int = 0
-
-    # Handlers
-    _FROM_BYTES_HANDLERS = {
-        'is_primitive': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset),
-        'is_bitfield': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset, bools, enums),
-        'is_union': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset),
-        'is_array': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset),
-        'is_struct': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset),
-        'is_pointer': lambda T, buffer, offset, bools, enums: T.from_bytes(buffer, offset).dereference(buffer, True),
-    }
-
-    _TO_BYTES_HANDLERS = {
-        'is_primitive': lambda self, attr, field: field.type.to_bytes(attr),
-        'is_bitfield': lambda self, attr, field: attr.to_bytes(self._bools_, self._enums_),
-        'is_union': lambda self, attr, field: attr.to_bytes(),
-        'is_array': lambda self, attr, field: attr.to_bytes(),
-        'is_struct': lambda self, attr, field: attr.to_bytes(),
-        'is_pointer': lambda self, attr, field: (
-            attr.to_bytes() if isinstance(attr, field.type)
-            else field.type(reference=attr).to_bytes() if attr is not None
-            else struct.pack('>I', 0x00000000)
-        ),
-    }
+    _size_: int = 0
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -58,11 +35,24 @@ class Z64Struct(DataType, StructType):
             field, offset = cls._describe_field(name, data_type, offset)
             layout.append(field)
 
+        computed_size = offset
         if cls._align_ > 1:
-            offset = cls.align_to(offset, cls._align_)
+            computed_size = cls.align_to(offset, cls._align_)
 
         cls._layout_ = layout
-        cls._struct_size_ = offset
+        if cls._size_ > 0:
+            if cls._size_ < computed_size:
+                warnings.warn(
+                    f"{cls.__name__}: manually set _size_ ({cls._size_}) "
+                    f"does not match computed size ({computed_size})"
+                )
+            elif cls._size_ > computed_size:
+                warnings.warn(
+                    f"{cls.__name__}: manually set _size_ ({cls._size_}) "
+                    f"does not match computed size ({computed_size})"
+                )
+        else:
+            cls._size_ = computed_size
 
     @classmethod
     def _describe_field(cls, name, data_type: DataType, offset, attr=None):
@@ -83,6 +73,7 @@ class Z64Struct(DataType, StructType):
             if getattr(data_type, flag, False):
                 kind = k
                 break
+
         if kind is None:
             raise TypeError(f"Unsupported type {data_type}")
 
@@ -93,34 +84,6 @@ class Z64Struct(DataType, StructType):
         else:
             size = data_type.size()
 
-        # T = data_type
-        # if T.is_primitive:
-        #     size = data_type.size()
-        #     kind = 'primitive'
-        # elif T.is_bitfield:
-        #     size = data_type.size()
-        #     kind = 'bitfield'
-        # elif T.is_union:
-        #     size = data_type.size()
-        #     kind = 'union'
-        # elif T.is_array:
-        #     if data_type.length is None:
-        #         size = (len(attr) * data_type.data_type.size()) if attr else 0
-        #     else:
-        #         size = data_type.size()
-        #     kind = 'array'
-        # elif T.is_struct:
-        #     if isinstance(attr, Z64Struct):
-        #         size = attr.size()
-        #     else:
-        #         size = data_type.size()
-        #     kind = 'struct'
-        # elif T.is_pointer:
-        #     size = data_type.size()
-        #     kind = 'pointer'
-        # else:
-        #     raise TypeError()
-
         enum_cls = cls._enums_.get(name)
         is_bool = name in cls._bools_
         field = Field(name, data_type, offset, size, kind, enum_cls, is_bool)
@@ -130,10 +93,10 @@ class Z64Struct(DataType, StructType):
     @classmethod
     def size(cls) -> int:
         """ Returns the total size of the structure in bytes. """
-        return cls._struct_size_
+        return cls._size_
 
     @classmethod
-    def from_bytes(cls, buffer: bytes, offset: int = 0):
+    def from_bytes(cls, buffer: bytes, offset: int = 0, deref_ptrs: bool = True):
         """"""
         obj = cls.__new__(cls)
         layout = cls._layout_ or obj._generate_layout()
@@ -142,34 +105,16 @@ class Z64Struct(DataType, StructType):
             if not isinstance(field, Field):
                 raise TypeError(f"Expected Field, got {type(field)}")
 
-
             T: DataType = field.type
             field_offset = offset + field.offset
-            attr = None
-
-            for flag, handler in cls._FROM_BYTES_HANDLERS.items():
-                if getattr(T, flag, False):
-                    attr = handler(T, buffer, field_offset, cls._bools_, cls._enums_)
-                    break
-            else:
-                raise TypeError(f"Unsupported field type {T}")
-
-            # if T.is_primitive:
-            #     attr = T.from_bytes(buffer, field_offset)
-            # elif T.is_bitfield:
-            #     attr = T.from_bytes(buffer, field_offset, cls._bools_, cls._enums_)
-            # elif T.is_union:
-            #     attr = T.from_bytes(buffer, field_offset)
-            # elif T.is_array:
-            #     if T.length is None:
-            #         raise TypeError(f"Dynamic array '{field.name}' requires manual length")
-            #     attr = T.from_bytes(buffer, field_offset)
-            # elif T.is_struct:
-            #     attr = T.from_bytes(buffer, field_offset)
-            # elif T.is_pointer:
-            #     attr = T.from_bytes(buffer, field_offset).dereference(buffer, True)
-            # else:
-            #     raise TypeError(f"Unsupported field type: {T}")
+            attr = FROM_BYTES_HANDLERS[field.kind](
+                T,
+                buffer,
+                field_offset,
+                cls._bools_,
+                cls._enums_,
+                deref_ptrs=deref_ptrs,
+            )
 
             attr = cls._normalize_in(attr, field)
             setattr(obj, field.name, attr)
@@ -187,32 +132,7 @@ class Z64Struct(DataType, StructType):
 
             attr = getattr(self, field.name)
             attr = self._normalize_out(attr, field)
-
-            T: DataType = field.type
-            for flag, handler in self._TO_BYTES_HANDLERS.items():
-                if getattr(T, flag, False):
-                    b = handler(self, attr, field)
-                    break
-            else:
-                raise TypeError(f"Unsupported field type {T}")
-
-            # T: DataType = field.type
-            # if T.is_primitive:
-            #     b = T.to_bytes(attr)
-            # elif T.is_bitfield:
-            #     b = attr.to_bytes(self._bools_, self._enums_)
-            # elif T.is_union or T.is_array or T.is_struct:
-            #     b = attr.to_bytes()
-            # elif T.is_pointer:
-            #     if attr is None:
-            #         b = struct.pack('>I', 0x00000000)
-            #     elif isinstance(attr, T):
-            #         b = attr.to_bytes()
-            #     else:
-            #         b = T(reference=attr).to_bytes()
-            # else:
-            #     raise TypeError(f"Unsupported field type: {T}")
-
+            b = TO_BYTES_HANDLERS[field.kind](self, attr, field)
             buffer[field.offset:field.offset + len(b)] = b
 
         return bytes(buffer)
@@ -251,37 +171,12 @@ class Z64Struct(DataType, StructType):
             attr = getattr(self, field.name)
             attr = self._normalize_out(attr, field)
 
-            T: DataType = field.type
-            if T.is_pointer and isinstance(attr, Z64Struct):
+            if field.kind == 'pointer' and isinstance(attr, Z64Struct):
                 b = attr._stable_bytes()
             else:
-                for flag, handler in self._TO_BYTES_HANDLERS.items():
-                    if getattr(T, flag, False):
-                        b = handler(self, attr, field)
-                        break
-                else:
-                    raise TypeError(f"Unsupported field type {T}")
+                b = TO_BYTES_HANDLERS[field.kind](self, attr, field)
 
             buffer.extend(b)
-
-            # T: DataType = field.type
-            # if T.is_primitive:
-            #     b = T.to_bytes(attr)
-            #     buffer.extend(b)
-            # elif T.is_bitfield:
-            #     b = attr.to_bytes(self._bools_, self._enums_)
-            #     buffer.extend(b)
-            # elif T.is_union or T.is_array or T.is_struct:
-            #     b = attr.to_bytes()
-            #     buffer.extend(b)
-            # elif T.is_pointer:
-            #     if isinstance(attr, Z64Struct):
-            #         b = attr._stable_bytes()
-            #     else:
-            #         b = struct.pack('>I', 0x00000000)
-            #     buffer.extend(b)
-            # else:
-            #     raise TypeError(f"Unsupported field type: {T}")
 
         return bytes(buffer)
 

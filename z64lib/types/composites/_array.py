@@ -1,4 +1,4 @@
-from z64lib.types.base import DataType
+from z64lib.types.base import DataType, FROM_BYTES_HANDLERS
 from z64lib.types.markers import ArrayType
 
 
@@ -16,7 +16,6 @@ class array(DataType, ArrayType):
     length: int = 0
 
     def __class_getitem__(cls, params):
-        """"""
         if not isinstance(params, tuple):
             data_type = params
             length = None
@@ -42,8 +41,42 @@ class array(DataType, ArrayType):
             },
         )
 
-    def __init__(self, items=None, original_address: int = 0, allocated_address: int = 0):
-        self.items = items if items is not None else []
+    def __init__(self, items=[], original_address: int = 0, allocated_address: int = 0):
+        self.items = []
+
+        for item in items:
+            if isinstance(item, self.data_type):
+                self.items.append(item)
+            elif getattr(self.data_type, 'is_primitive', False):
+                self.items.append(self.data_type(item))
+            elif getattr(self.data_type, 'is_array', False):
+                if isinstance(item, self.data_type):
+                    self.items.append(item)
+                else:
+                    raise TypeError(f"Cannot initialize nested array from {item}")
+            elif getattr(self.data_type, 'is_struct', False):
+                if isinstance(item, self.data_type):
+                    self.items.append(item)
+                else:
+                    raise TypeError(f"Cannot initialize struct array from {item}")
+            elif getattr(self.data_type, 'is_pointer', False):
+                if isinstance(item, self.data_type):
+                    self.items.append(item)
+                else:
+                    raise TypeError(f"Cannot initialize pointer array from {item}")
+            elif getattr(self.data_type, 'is_bitfield', False):
+                if isinstance(item, self.data_type):
+                    self.items.append(item)
+                else:
+                    raise TypeError(f"Cannot initialize bitfield array from {item}")
+            elif getattr(self.data_type, 'is_union', False):
+                if isinstance(item, self.data_type):
+                    self.items.append(item)
+                else:
+                    raise TypeError(f"Cannot initialize union array from {item}")
+            else:
+                raise TypeError(f"Cannot wrap {item} in {self.data_type}")
+
         self.original_address = original_address
         self.allocated_address = allocated_address
 
@@ -74,7 +107,7 @@ class array(DataType, ArrayType):
         return cls.data_type.size() * cls.length
 
     @classmethod
-    def from_bytes(cls, buffer: bytes, offset: int, length: int | None = None):
+    def from_bytes(cls, buffer: bytes, offset: int, length: int | None = None, deref_ptrs: bool = True):
         """"""
         if cls.length is None:
             if length is None:
@@ -84,11 +117,29 @@ class array(DataType, ArrayType):
             actual_len = cls.length
 
         items = []
-        size = cls.data_type.size()
+
+        kind = None
+        for flag, k in [
+            ('is_primitive', 'primitive'),
+            ('is_bitfield', 'bitfield'),
+            ('is_union', 'union'),
+            ('is_array', 'array'),
+            ('is_struct', 'struct'),
+            ('is_pointer', 'pointer'),
+        ]:
+            if getattr(cls.data_type, flag, False):
+                kind = k
+                break
+
+        if kind is None:
+            raise TypeError(f"Unsupported array element type {cls.data_type}")
+
+        handler = FROM_BYTES_HANDLERS[kind]
+        size = cls.data_type.size() if kind not in ('array', 'struct', 'union') else None
 
         for i in range(actual_len):
-            item_offset = offset + i * size
-            item = cls.data_type.from_bytes(buffer, item_offset)
+            item_offset = offset + i * (size or 0)
+            item = handler(cls.data_type, buffer, item_offset, deref_ptrs=deref_ptrs)# cls.data_type.from_bytes(buffer, item_offset)
             items.append(item)
 
         return cls(items, offset)
@@ -103,7 +154,10 @@ class array(DataType, ArrayType):
         offset = 0
 
         for v in self.items:
-            b = self.data_type.to_bytes(v)
+            if hasattr(v, 'is_primitive'):
+                b = self.data_type.to_bytes(v)
+            else:
+                b = v.to_bytes()
             data[offset:offset + len(b)] = b
             offset += len(b)
 

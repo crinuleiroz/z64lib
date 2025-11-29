@@ -50,24 +50,24 @@ class pointer(DataType, PointerType):
         )
 
     def __init__(self, reference: DataType = None, target_address: int = 0,
-                 original_address: int = 0, nullable: bool = True):
+                 original_address: int = 0, is_nullable: bool = True):
         self.reference = reference
         self.target_address = target_address
         self.original_address = original_address
         self.allocated_address = 0 # Consistency only, never used
-        self.nullable = nullable
+        self.is_nullable = is_nullable
 
     @classmethod
-    def from_bytes(cls, buffer: bytes, offset: int):
+    def from_bytes(cls, buffer: bytes, offset: int, is_nullable: bool = True):
         """"""
         target_address = cls._get_struct().unpack_from(buffer, offset)[0]
-        return cls(None, target_address, offset)
+        return cls(None, target_address, offset, is_nullable=is_nullable)
 
     def dereference(self, buffer: bytes, resolve_all: bool = False):
         """"""
         if self.target_address == 0 or self.target_address >= len(buffer):
             self.reference = None
-            if not self.nullable:
+            if not self.is_nullable:
                 raise ValueError(f"Pointer at offset {self.original_address} cannot be null")
             return None
 
@@ -96,7 +96,7 @@ class pointer(DataType, PointerType):
     @property
     def address(self):
         if self.reference is None:
-            return 0 if self.nullable else None
+            return 0 if self.is_nullable else None
         return getattr(self.reference, 'allocated_address', 0) or getattr(self.reference, 'original_address', 0)
 
 __all__ = [

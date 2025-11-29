@@ -13,6 +13,7 @@ class DynaStruct(Z64Struct):
     is_dyna: bool = False
 
     def _generate_layout(self) -> list[Field]:
+        """"""
         offset = 0
         layout = []
 

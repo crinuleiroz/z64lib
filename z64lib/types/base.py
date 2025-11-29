@@ -153,3 +153,91 @@ class Field:
         self.kind = kind
         self.enum = enum
         self.bool = bool
+
+
+#region from_bytes() Handlers
+def primitive_from_bytes(T: 'DataType', buffer: bytes, offset: int, *args, **kwargs):
+    """"""
+    return T.from_bytes(buffer, offset)
+
+
+def bitfield_from_bytes(T: 'DataType', buffer: bytes, offset: int, bools: set[str], enums: dict[str, type], *args, **kwargs):
+    """"""
+    return T.from_bytes(buffer, offset, bools, enums)
+
+
+def composite_from_bytes(T: 'DataType', buffer: bytes, offset: int, *args, **kwargs):
+    """"""
+    return T.from_bytes(buffer, offset)
+
+
+def pointer_from_bytes(T: 'DataType', buffer: bytes, offset: int, *args, deref_ptrs: bool = True, **kwargs):
+    """"""
+    attr = T.from_bytes(buffer, offset)
+    if deref_ptrs:
+        return attr.dereference(buffer, True)
+    return attr
+
+
+FROM_BYTES_HANDLERS = {
+    'primitive': primitive_from_bytes,
+    'bitfield': bitfield_from_bytes,
+    'union': composite_from_bytes,
+    'array': composite_from_bytes,
+    'struct': composite_from_bytes,
+    'pointer': pointer_from_bytes,
+}
+#endregion
+
+
+#region to_bytes() Handlers
+def primitive_to_bytes(O: 'DataType', attr: 'DataType', field: 'Field', *args, **kwargs):
+    """"""
+    return field.type.to_bytes(attr)
+
+
+def bitfield_to_bytes(O: 'DataType', attr: 'DataType', field: 'Field', *args, **kwargs):
+    """"""
+    return attr.to_bytes(O._bools_, O._enums_)
+
+
+def composite_to_bytes(O: 'DataType', attr: 'DataType', field: 'Field', *args, **kwargs):
+    """"""
+    return attr.to_bytes()
+
+
+def pointer_to_bytes(O: 'DataType', attr: 'DataType', field: 'Field', *args, **kwargs):
+    """"""
+    if isinstance(attr, field.type):
+        return attr.to_bytes()
+    elif attr is not None:
+        return field.type(reference=attr).to_bytes()
+    else:
+        return field.type._get_struct().pack(0x00000000)
+
+
+TO_BYTES_HANDLERS = {
+    'primitive': primitive_to_bytes,
+    'bitfield': bitfield_to_bytes,
+    'union': composite_to_bytes,
+    'array': composite_to_bytes,
+    'struct': composite_to_bytes,
+    'pointer': pointer_to_bytes,
+}
+#endregion
+
+
+__all__ = [
+    'DataType',
+    'Field',
+    'primitive_from_bytes',
+    'bitfield_from_bytes',
+    'composite_from_bytes',
+    'pointer_from_bytes',
+    'primitive_to_bytes',
+    'bitfield_to_bytes',
+    'composite_to_bytes',
+    'pointer_to_bytes',
+    'FROM_BYTES_HANDLERS',
+    'TO_BYTES_HANDLERS',
+]
