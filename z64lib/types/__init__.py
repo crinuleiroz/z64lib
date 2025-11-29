@@ -41,6 +41,7 @@ __all__ = [
     's64',
     'u64',
     'f32',
+    'f64',
     # Non-standard Primitives
     's24',
     'u24',
