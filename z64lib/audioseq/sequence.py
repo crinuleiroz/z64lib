@@ -106,6 +106,7 @@ class AseqFilter(AseqDataFragment): ...
 #endregion
 
 
+#region AudioSequence
 class AudioSequence:
     """"""
     def __init__(self, aseq_version):
@@ -130,3 +131,4 @@ class AudioSequence:
         if 0 <= index < len(self.sections):
             return self.sections[index] or NULL_METADATA
         return NULL_METADATA
+#endregion

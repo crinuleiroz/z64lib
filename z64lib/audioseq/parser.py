@@ -94,11 +94,11 @@ class AseqParser:
                 frag.data.append((delay, arg)) # Change to something more concrete later
                 addr += 4
         if isinstance(frag, AseqFilter):
-            ...
+            ... # TODO: Add parsing
         if isinstance(frag, AseqArray):
-            ...
+            ... # TODO: Add parsing
         if isinstance(frag, AseqTable):
-            ...
+            ... # TODO: Add parsing
 
     def _handle_message_reference(self, frag: AseqMessageFragment, msg: AseqMessage):
         """"""
