@@ -1,3 +1,4 @@
+from pathlib import Path
 import struct
 from dataclasses import dataclass
 from z64lib.audiobank import AudiobankIndexEntry
@@ -101,7 +102,7 @@ class InstrumentBank:
 
         return obj
 
-    def write_bytes(self, file_name: str, file_path: str, output_metadata: bool = True, truncate_metadata: bool = False, output_bank: bool = True):
+    def write_bytes(self, file_name: str, file_path: str | Path, output_metadata: bool = True, truncate_metadata: bool = False, output_bank: bool = True):
         """
         Compiles an `InstrumentBank` object from memory to binary, then writes the output to a file.
         """
