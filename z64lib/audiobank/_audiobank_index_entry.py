@@ -1,3 +1,4 @@
+import sys
 from z64lib.core.enums import AudioStorageMedium, AudioCacheLoadType
 from z64lib.types import *
 
@@ -89,12 +90,23 @@ class AudiobankIndexEntry(Z64Struct):
         """
         length = len(buffer)
 
-        match length:
-            case 0x08:
+        if sys.version_info >= (3, 10):
+            match length:
+                case 0x08:
+                    buffer = (b'\x00' * 8) + buffer
+                case 0x10:
+                    pass
+                case _:
+                    raise ValueError(
+                        f"Unexpected AudiobankIndexEntry size: {hex(length)} "
+                        "(expected 0x08 or 0x10 bytes)."
+                    )
+        else:
+            if length == 0x08:
                 buffer = (b'\x00' * 8) + buffer
-            case 0x10:
+            elif length == 0x10:
                 pass
-            case _:
+            else:
                 raise ValueError(
                     f"Unexpected AudiobankIndexEntry size: {hex(length)} "
                     "(expected 0x08 or 0x10 bytes)."
