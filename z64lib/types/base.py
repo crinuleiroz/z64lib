@@ -41,10 +41,9 @@ class DataType:
         if issubclass(cls, int):
             data = int.from_bytes(buffer[offset:offset + cls.size()], 'big', signed=cls.signed)
         elif issubclass(cls, float):
-            s = cls._get_struct()
-            if s is None:
+            if cls._struct is None:
                 raise TypeError(f"Cannot parse float type {cls.__name__} without a struct format")
-            data = s.unpack_from(buffer, offset)[0]
+            data = cls._struct.unpack_from(buffer, offset)[0]
         else:
             raise TypeError(f"Cannot parse unknown type {cls.__name__}")
 
