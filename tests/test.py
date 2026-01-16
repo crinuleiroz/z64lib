@@ -61,15 +61,26 @@ if TEST_BANK:
     bank = InstrumentBank.from_bytes(entry_data, bank_data)
 
     if PRINT_BANK_TEST_TARGET:
-        # Test target selection
-        match BANK_TEST_TARGET.lower():
-            case 'instrument':
+        if sys.version_info >= (3, 10):
+            # Test target selection
+            match BANK_TEST_TARGET.lower():
+                case 'instrument':
+                    items = bank.instruments
+                case 'drum':
+                    items = bank.drums
+                case 'effect':
+                    items = bank.effects
+                case _:
+                    items = None
+        else:
+            target = BANK_TEST_TARGET.lower()
+            if target == 'instrument':
                 items = bank.instruments
-            case 'drum':
+            elif target == 'drum':
                 items = bank.drums
-            case 'effect':
+            elif target == 'effect':
                 items = bank.effects
-            case _:
+            else:
                 items = None
 
         # Test __repr__ and to_bytes()
